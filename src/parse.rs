@@ -1,6 +1,7 @@
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
+mod as_is_parse;
 mod std_parse;
 mod unquote_parse;
 
@@ -43,15 +44,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Парсер, возвращающий результат как есть
-#[derive(Debug, Clone)]
-struct AsIs;
-impl Parser for AsIs {
-    type Dest = String;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        Ok((&input[input.len()..], input.into()))
-    }
-}
 /// Парсер константных строк
 /// (аналог `nom::bytes::complete::tag`)
 #[derive(Debug, Clone)]
