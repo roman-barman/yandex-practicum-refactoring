@@ -1,8 +1,10 @@
+use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod as_is_parse;
+mod quoted_tag_parse;
 mod std_parse;
 mod tag_parse;
 mod unquote_parse;
@@ -46,23 +48,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Парсер [тэга](Tag), обёрнутого в кавычки
-#[derive(Debug, Clone)]
-struct QuotedTag(Tag);
-impl Parser for QuotedTag {
-    type Dest = ();
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let (remaining, candidate) = do_unquote_non_escaped(input)?;
-        if !self.0.parse(candidate)?.0.is_empty() {
-            return Err(());
-        }
-        Ok((remaining, ()))
-    }
-}
-/// Конструктор [QuotedTag]
-fn quoted_tag(tag_value: &'static str) -> QuotedTag {
-    QuotedTag(tag(tag_value))
-}
 /// Комбинатор, пробрасывающий строку без лидирующих пробелов
 #[derive(Debug, Clone)]
 struct StripWhitespace<T> {
@@ -1336,16 +1321,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_quoted_tag() {
-        assert_eq!(
-            quoted_tag("key").parse(r#""key"=value"#.into()),
-            Ok(("=value".into(), ()))
-        );
-        assert_eq!(quoted_tag("key").parse(r#""key:"value"#.into()), Err(()));
-        assert_eq!(quoted_tag("key").parse(r#"key=value"#.into()), Err(()));
     }
 
     #[test]
