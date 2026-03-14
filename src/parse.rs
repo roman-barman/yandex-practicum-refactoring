@@ -1,3 +1,4 @@
+use crate::parse::delimited_parse::{Delimited, delimited};
 use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
@@ -5,6 +6,7 @@ use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod as_is_parse;
+mod delimited_parse;
 mod quoted_tag_parse;
 mod std_parse;
 mod strip_whitespace_parse;
@@ -50,51 +52,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор, чтобы распарсить нужное, окружённое в начале и в конце чем-то
-/// обязательным, не участвующем в результате.
-/// Пробрасывает строку в парсер1, оставшуюся строку после первого
-/// парсинга - в парсер2, оставшуюся строку после второго парсинга - в парсер3.
-/// Результат парсера2 будет результатом этого комбинатора, а оставшейся
-/// строкой - строка, оставшаяся после парсера3.
-/// (аналог `delimited` из `nom`)
-#[derive(Debug, Clone)]
-struct Delimited<Prefix, T, Suffix> {
-    prefix_to_ignore: Prefix,
-    dest_parser: T,
-    suffix_to_ignore: Suffix,
-}
-impl<Prefix, T, Suffix> Parser for Delimited<Prefix, T, Suffix>
-where
-    Prefix: Parser,
-    T: Parser,
-    Suffix: Parser,
-{
-    type Dest = T::Dest;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let (remaining, _) = self.prefix_to_ignore.parse(input)?;
-        let (remaining, result) = self.dest_parser.parse(remaining)?;
-        self.suffix_to_ignore
-            .parse(remaining)
-            .map(|(remaining, _)| (remaining, result))
-    }
-}
-/// Конструктор [Delimited]
-fn delimited<Prefix, T, Suffix>(
-    prefix_to_ignore: Prefix,
-    dest_parser: T,
-    suffix_to_ignore: Suffix,
-) -> Delimited<Prefix, T, Suffix>
-where
-    Prefix: Parser,
-    T: Parser,
-    Suffix: Parser,
-{
-    Delimited {
-        prefix_to_ignore,
-        dest_parser,
-        suffix_to_ignore,
-    }
-}
 /// Комбинатор-отображение. Парсит дочерним парсером, преобразует результат так,
 /// как вызывающему хочется
 #[derive(Debug, Clone)]
@@ -1306,26 +1263,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_delimited() {
-        assert_eq!(
-            delimited(tag("["), U32, tag("]")).parse("[0x32]".into()),
-            Ok(("".into(), 0x32))
-        );
-        assert_eq!(
-            delimited(tag("[".into()), U32, tag("]".into())).parse("[0x32] nice".into()),
-            Ok((" nice".into(), 0x32))
-        );
-        assert_eq!(
-            delimited(tag("[".into()), U32, tag("]")).parse("0x32]".into()),
-            Err(())
-        );
-        assert_eq!(
-            delimited(tag("[".into()), U32, tag("]")).parse("[0x32".into()),
-            Err(())
-        );
     }
 
     #[test]
