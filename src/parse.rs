@@ -1,5 +1,6 @@
 use crate::parse::delimited_parse::{Delimited, delimited};
 use crate::parse::map_parse::{Map, map};
+use crate::parse::preceded_parse::{Preceded, preceded};
 use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
@@ -9,6 +10,7 @@ use crate::parse::unquote_parse::{Unquote, unquote};
 mod as_is_parse;
 mod delimited_parse;
 mod map_parse;
+mod preceded_parse;
 mod quoted_tag_parse;
 mod std_parse;
 mod strip_whitespace_parse;
@@ -54,35 +56,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор с отбрасываемым префиксом, упрощённая версия [Delimited]
-/// (аналог `preceeded` из `nom`)
-#[derive(Debug, Clone)]
-struct Preceded<Prefix, T> {
-    prefix_to_ignore: Prefix,
-    dest_parser: T,
-}
-impl<Prefix, T> Parser for Preceded<Prefix, T>
-where
-    Prefix: Parser,
-    T: Parser,
-{
-    type Dest = T::Dest;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let (remaining, _) = self.prefix_to_ignore.parse(input)?;
-        self.dest_parser.parse(remaining)
-    }
-}
-/// Конструктор [Preceded]
-fn preceded<Prefix, T>(prefix_to_ignore: Prefix, dest_parser: T) -> Preceded<Prefix, T>
-where
-    Prefix: Parser,
-    T: Parser,
-{
-    Preceded {
-        prefix_to_ignore,
-        dest_parser,
-    }
-}
 /// Комбинатор, который требует, чтобы все дочерние парсеры отработали,
 /// (аналог `all` из `nom`)
 #[derive(Debug, Clone)]
