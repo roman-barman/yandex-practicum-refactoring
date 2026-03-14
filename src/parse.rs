@@ -1,6 +1,7 @@
 use crate::parse::all_parse::{All, all2};
 use crate::parse::delimited_parse::{Delimited, delimited};
 use crate::parse::key_value_parse::{KeyValue, key_value};
+use crate::parse::list_parse::{List, list};
 use crate::parse::map_parse::{Map, map};
 use crate::parse::permutation_parse::{Permutation, permutation2, permutation3};
 use crate::parse::preceded_parse::{Preceded, preceded};
@@ -13,6 +14,7 @@ mod all_parse;
 mod as_is_parse;
 mod delimited_parse;
 mod key_value_parse;
+mod list_parse;
 mod map_parse;
 mod permutation_parse;
 mod preceded_parse;
@@ -61,41 +63,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор списка из любого числа элементов, которые надо читать
-/// вложенным парсером. Граница списка определяется квадратными (`[`&`]`)
-/// скобками.
-/// Для простоты реализации, после каждого элемента списка должна быть запятая
-#[derive(Debug, Clone)]
-struct List<T> {
-    parser: T,
-}
-impl<T: Parser> Parser for List<T> {
-    type Dest = Vec<T::Dest>;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let mut remaining = input.trim_start().strip_prefix('[').ok_or(())?.trim_start();
-        let mut result = Vec::new();
-        while !remaining.is_empty() {
-            match remaining.strip_prefix(']') {
-                Some(remaining) => return Ok((remaining.trim_start(), result)),
-                None => {
-                    let (new_remaining, item) = self.parser.parse(remaining)?;
-                    let new_remaining = new_remaining
-                        .trim_start()
-                        .strip_prefix(',')
-                        .ok_or(())?
-                        .trim_start();
-                    result.push(item);
-                    remaining = new_remaining;
-                }
-            }
-        }
-        Err(()) // строка кончилась, не закрыв скобку
-    }
-}
-/// Конструктор для [List]
-fn list<T: Parser>(parser: T) -> List<T> {
-    List { parser }
-}
 /// Комбинатор, который вернёт тот результат, который будет успешно
 /// получен первым из дочерних комбинаторов
 /// (аналог `alt` из `nom`)
@@ -1012,20 +979,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_list() {
-        assert_eq!(
-            list(U32).parse("[1,2,3,4,]".into()),
-            Ok(("".into(), vec![1, 2, 3, 4,]))
-        );
-        assert_eq!(
-            list(U32).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
-            Ok(("nice".into(), vec![1, 2, 3, 4,]))
-        );
-        assert_eq!(list(U32).parse("1,2,3,4,".into()), Err(()));
-        assert_eq!(list(U32).parse("[]".into()), Ok(("".into(), vec![])));
     }
 
     #[test]
