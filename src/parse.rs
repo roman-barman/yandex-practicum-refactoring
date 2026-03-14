@@ -1,4 +1,4 @@
-use crate::parse::std_parse::U32;
+use crate::parse::std_parse::{Byte, U32};
 
 mod std_parse;
 
@@ -13,26 +13,6 @@ trait Parser {
 trait Parsable: Sized {
     type Parser: Parser<Dest = Self>;
     fn parser() -> Self::Parser;
-}
-
-mod stdp {
-    // parsers for std types
-    use super::Parser;
-
-    /// Шестнадцатеричные байты (пригодится при парсинге блобов)
-    #[derive(Debug, Clone)]
-    pub struct Byte;
-    impl Parser for Byte {
-        type Dest = u8;
-        fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-            let (to_parse, remaining) = input.split_at_checked(2).ok_or(())?;
-            if !to_parse.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err(());
-            }
-            let value = u8::from_str_radix(to_parse, 16).map_err(|_| ())?;
-            Ok((remaining, value))
-        }
-    }
 }
 
 /// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть
@@ -682,9 +662,9 @@ const AUTHDATA_SIZE: usize = 1024;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthData([u8; AUTHDATA_SIZE]);
 impl Parsable for AuthData {
-    type Parser = Map<Take<stdp::Byte>, fn(Vec<u8>) -> Self>;
+    type Parser = Map<Take<Byte>, fn(Vec<u8>) -> Self>;
     fn parser() -> Self::Parser {
-        map(take(AUTHDATA_SIZE, stdp::Byte), |authdata| {
+        map(take(AUTHDATA_SIZE, Byte), |authdata| {
             AuthData(authdata.try_into().unwrap_or([0; AUTHDATA_SIZE]))
         })
     }
