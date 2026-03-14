@@ -1,4 +1,5 @@
 use crate::parse::delimited_parse::{Delimited, delimited};
+use crate::parse::map_parse::{Map, map};
 use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
@@ -7,6 +8,7 @@ use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod as_is_parse;
 mod delimited_parse;
+mod map_parse;
 mod quoted_tag_parse;
 mod std_parse;
 mod strip_whitespace_parse;
@@ -52,25 +54,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор-отображение. Парсит дочерним парсером, преобразует результат так,
-/// как вызывающему хочется
-#[derive(Debug, Clone)]
-struct Map<T, M> {
-    parser: T,
-    map: M,
-}
-impl<T: Parser, Dest: Sized, M: Fn(T::Dest) -> Dest> Parser for Map<T, M> {
-    type Dest = Dest;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        self.parser
-            .parse(input)
-            .map(|(remaining, pre_result)| (remaining, (self.map)(pre_result)))
-    }
-}
-/// Конструктор [Map]
-fn map<T: Parser, Dest: Sized, M: Fn(T::Dest) -> Dest>(parser: T, map: M) -> Map<T, M> {
-    Map { parser, map }
-}
 /// Комбинатор с отбрасываемым префиксом, упрощённая версия [Delimited]
 /// (аналог `preceeded` из `nom`)
 #[derive(Debug, Clone)]
