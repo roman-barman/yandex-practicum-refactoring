@@ -1,6 +1,8 @@
 use crate::parse::std_parse::{Byte, U32};
+use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod std_parse;
+mod unquote_parse;
 
 /// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
 /// что распарсить осталось'
@@ -30,28 +32,6 @@ fn quote(input: &str) -> String {
     result.push('"');
     result
 }
-/// Распарсить строку, которую ранее [обернули в кавычки](quote)
-// `"abc\"def\\ghi"nice` -> (`abcd"def\ghi`, `nice`)
-fn do_unquote(input: &str) -> Result<(&str, String), ()> {
-    let mut result = String::new();
-    let mut escaped_now = false;
-    let mut chars = input.strip_prefix("\"").ok_or(())?.chars();
-    while let Some(c) = chars.next() {
-        match (c, escaped_now) {
-            ('"' | '\\', true) => {
-                result.push(c);
-                escaped_now = false;
-            }
-            ('\\', false) => escaped_now = true,
-            ('"', false) => return Ok((chars.as_str(), result)),
-            (c, _) => {
-                result.push(c);
-                escaped_now = false;
-            }
-        }
-    }
-    Err(()) // строка кончилась, не закрыв кавычку
-}
 /// Распарсить строку, обёрную в кавычки
 /// (сокращённая версия [do_unquote], в которой вложенные кавычки не предусмотрены)
 fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
@@ -62,19 +42,7 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     }
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
-/// Парсер кавычек
-#[derive(Debug, Clone)]
-struct Unquote;
-impl Parser for Unquote {
-    type Dest = String;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        do_unquote(input)
-    }
-}
-/// Конструктор [Unquote]
-fn unquote() -> Unquote {
-    Unquote
-}
+
 /// Парсер, возвращающий результат как есть
 #[derive(Debug, Clone)]
 struct AsIs;
@@ -1390,21 +1358,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_unquote() {
-        assert_eq!(
-            Unquote.parse(r#""411""#.into()),
-            Ok(("".into(), "411".into()))
-        );
-        assert_eq!(Unquote.parse(r#" "411""#.into()), Err(()));
-        assert_eq!(Unquote.parse(r#"411"#.into()), Err(()));
-
-        assert_eq!(
-            Unquote.parse(r#""ni\\c\"e""#.into()),
-            Ok(("".into(), r#"ni\c"e"#.into()))
-        );
     }
 
     #[test]
