@@ -6,7 +6,7 @@ use crate::parse::list_parse::{List, list};
 use crate::parse::map_parse::{Map, map};
 use crate::parse::permutation_parse::{Permutation, permutation2, permutation3};
 use crate::parse::preceded_parse::{Preceded, preceded};
-use crate::parse::std_parse::{Byte, U32};
+use crate::parse::std_parse::{Byte, U32Parser};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::take_parse::{Take, take};
@@ -153,7 +153,7 @@ impl Parsable for Backet {
     type Parser = Map<
         Delimited<
             All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<U32>)>,
+            Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -162,7 +162,10 @@ impl Parsable for Backet {
         map(
             delimited(
                 all2(strip_whitespace(tag("Backet")), strip_whitespace(tag("{"))),
-                permutation2(key_value("asset_id", unquote()), key_value("count", U32)),
+                permutation2(
+                    key_value("asset_id", unquote()),
+                    key_value("count", U32Parser),
+                ),
                 strip_whitespace(tag("}")),
             ),
             |(asset_id, count)| Backet { asset_id, count },
@@ -179,7 +182,7 @@ impl Parsable for UserCash {
     type Parser = Map<
         Delimited<
             All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<U32>)>,
+            Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -191,7 +194,10 @@ impl Parsable for UserCash {
                     strip_whitespace(tag("UserCash")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(key_value("user_id", unquote()), key_value("count", U32)),
+                permutation2(
+                    key_value("user_id", unquote()),
+                    key_value("count", U32Parser),
+                ),
                 strip_whitespace(tag("}")),
             ),
             |(user_id, count)| UserCash { user_id, count },
@@ -578,7 +584,7 @@ impl Parsable for AppLogJournalKind {
             Map<
                 Preceded<
                     StripWhitespace<Tag>,
-                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<U32>)>, Tag>,
+                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>, Tag>,
                 >,
                 fn((String, u32)) -> AppLogJournalKind,
             >,
@@ -591,7 +597,7 @@ impl Parsable for AppLogJournalKind {
                     StripWhitespace<Tag>,
                     Delimited<
                         Tag,
-                        Permutation<(KeyValue<Unquote>, KeyValue<Unquote>, KeyValue<U32>)>,
+                        Permutation<(KeyValue<Unquote>, KeyValue<Unquote>, KeyValue<U32Parser>)>,
                         Tag,
                     >,
                 >,
@@ -633,7 +639,7 @@ impl Parsable for AppLogJournalKind {
                             tag("{"),
                             permutation2(
                                 key_value("user_id", unquote()),
-                                key_value("authorized_capital", U32),
+                                key_value("authorized_capital", U32Parser),
                             ),
                             tag("}"),
                         ),
@@ -658,7 +664,7 @@ impl Parsable for AppLogJournalKind {
                             permutation3(
                                 key_value("asset_id", unquote()),
                                 key_value("user_id", unquote()),
-                                key_value("liquidity", U32),
+                                key_value("liquidity", U32Parser),
                             ),
                             tag("}"),
                         ),
@@ -751,7 +757,7 @@ impl Parsable for LogLine {
     type Parser = Map<
         All<(
             <LogKind as Parsable>::Parser,
-            StripWhitespace<Preceded<Tag, U32>>,
+            StripWhitespace<Preceded<Tag, U32Parser>>,
         )>,
         fn((LogKind, u32)) -> Self,
     >;
@@ -759,7 +765,7 @@ impl Parsable for LogLine {
         map(
             all2(
                 LogKind::parser(),
-                strip_whitespace(preceded(tag("requestid="), U32)),
+                strip_whitespace(preceded(tag("requestid="), U32Parser)),
             ),
             |(kind, request_id)| LogLine { kind, request_id },
         )

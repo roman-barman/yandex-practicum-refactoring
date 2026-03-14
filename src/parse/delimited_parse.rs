@@ -49,25 +49,25 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::parse::std_parse::U32;
+    use crate::parse::std_parse::U32Parser;
     use crate::parse::tag_parse::tag;
 
     #[test]
     fn test_delimited() {
         assert_eq!(
-            delimited(tag("["), U32, tag("]")).parse("[0x32]".into()),
+            delimited(tag("["), U32Parser, tag("]")).parse("[0x32]".into()),
             Ok(("".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), U32, tag("]".into())).parse("[0x32] nice".into()),
+            delimited(tag("[".into()), U32Parser, tag("]".into())).parse("[0x32] nice".into()),
             Ok((" nice".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), U32, tag("]")).parse("0x32]".into()),
+            delimited(tag("[".into()), U32Parser, tag("]")).parse("0x32]".into()),
             Err(())
         );
         assert_eq!(
-            delimited(tag("[".into()), U32, tag("]")).parse("[0x32".into()),
+            delimited(tag("[".into()), U32Parser, tag("]")).parse("[0x32".into()),
             Err(())
         );
     }

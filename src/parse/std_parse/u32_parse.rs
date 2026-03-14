@@ -1,9 +1,10 @@
 use crate::parse::Parser;
+use std::num::NonZeroU32;
 
-/// Беззнаковые числа
+/// Unsigned numbers
 #[derive(Debug)]
-pub struct U32;
-impl Parser for U32 {
+pub struct U32Parser;
+impl Parser for U32Parser {
     type Dest = u32;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         let (remaining, is_hex) = input
@@ -19,13 +20,10 @@ impl Parser for U32 {
             .unwrap_or(remaining.len());
         let value = u32::from_str_radix(&remaining[..end_idx], if is_hex { 16 } else { 10 })
             .map_err(|_| ())?;
-        // подсказка: вместо if можно использовать tight-тип std::num::NonZeroU32
-        //            (ограничиться NonZeroU32::new(value).ok_or(()).get() - норм)
-        //            или даже заиспользовать tightness
-        if value == 0 {
-            return Err(()); // в наших логах нет нулей, ноль в операции - фикция
-        }
-        Ok((&remaining[end_idx..], value))
+        Ok((
+            &remaining[end_idx..],
+            NonZeroU32::new(value).ok_or(())?.get(),
+        ))
     }
 }
 
@@ -35,12 +33,13 @@ mod test {
 
     #[test]
     fn test_u32() {
-        assert_eq!(U32.parse("411".into()), Ok(("".into(), 411)));
-        assert_eq!(U32.parse("411ab".into()), Ok(("ab".into(), 411)));
-        assert_eq!(U32.parse("".into()), Err(()));
-        assert_eq!(U32.parse("-3".into()), Err(()));
-        assert_eq!(U32.parse("0x03".into()), Ok(("".into(), 0x3)));
-        assert_eq!(U32.parse("0x03abg".into()), Ok(("g".into(), 0x3ab)));
-        assert_eq!(U32.parse("0x".into()), Err(()));
+        assert_eq!(U32Parser.parse("411".into()), Ok(("".into(), 411)));
+        assert_eq!(U32Parser.parse("411ab".into()), Ok(("ab".into(), 411)));
+        assert_eq!(U32Parser.parse("".into()), Err(()));
+        assert_eq!(U32Parser.parse("-3".into()), Err(()));
+        assert_eq!(U32Parser.parse("0x03".into()), Ok(("".into(), 0x3)));
+        assert_eq!(U32Parser.parse("0x03abg".into()), Ok(("g".into(), 0x3ab)));
+        assert_eq!(U32Parser.parse("0x".into()), Err(()));
+        assert_eq!(U32Parser.parse("0".into()), Err(()));
     }
 }

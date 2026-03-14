@@ -40,19 +40,19 @@ pub fn list<T: Parser>(parser: T) -> List<T> {
 mod tests {
     use crate::parse::Parser;
     use crate::parse::list_parse::list;
-    use crate::parse::std_parse::U32;
+    use crate::parse::std_parse::U32Parser;
 
     #[test]
     fn test_list() {
         assert_eq!(
-            list(U32).parse("[1,2,3,4,]".into()),
+            list(U32Parser).parse("[1,2,3,4,]".into()),
             Ok(("".into(), vec![1, 2, 3, 4,]))
         );
         assert_eq!(
-            list(U32).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
+            list(U32Parser).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
             Ok(("nice".into(), vec![1, 2, 3, 4,]))
         );
-        assert_eq!(list(U32).parse("1,2,3,4,".into()), Err(()));
-        assert_eq!(list(U32).parse("[]".into()), Ok(("".into(), vec![])));
+        assert_eq!(list(U32Parser).parse("1,2,3,4,".into()), Err(()));
+        assert_eq!(list(U32Parser).parse("[]".into()), Ok(("".into(), vec![])));
     }
 }

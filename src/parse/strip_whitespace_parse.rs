@@ -21,7 +21,7 @@ pub fn strip_whitespace<T: Parser>(parser: T) -> StripWhitespace<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::parse::std_parse::U32;
+    use crate::parse::std_parse::U32Parser;
     use crate::parse::tag_parse::tag;
 
     #[test]
@@ -35,7 +35,7 @@ mod test {
             Ok(("".into(), ()))
         );
         assert_eq!(
-            strip_whitespace(U32).parse(" 42 answer".into()),
+            strip_whitespace(U32Parser).parse(" 42 answer".into()),
             Ok(("answer".into(), 42))
         );
     }

@@ -42,18 +42,24 @@ pub fn key_value<T: Parser>(key: &'static str, value_parser: T) -> KeyValue<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::parse::std_parse::U32;
+    use crate::parse::std_parse::U32Parser;
 
     #[test]
     fn test_key_value() {
         assert_eq!(
-            key_value("key", U32).parse(r#""key":32,"#.into()),
+            key_value("key", U32Parser).parse(r#""key":32,"#.into()),
             Ok(("".into(), 32))
         );
-        assert_eq!(key_value("key", U32).parse(r#"key:32,"#.into()), Err(()));
-        assert_eq!(key_value("key", U32).parse(r#""key":32"#.into()), Err(()));
         assert_eq!(
-            key_value("key", U32).parse(r#" "key" : 32 , nice"#.into()),
+            key_value("key", U32Parser).parse(r#"key:32,"#.into()),
+            Err(())
+        );
+        assert_eq!(
+            key_value("key", U32Parser).parse(r#""key":32"#.into()),
+            Err(())
+        );
+        assert_eq!(
+            key_value("key", U32Parser).parse(r#" "key" : 32 , nice"#.into()),
             Ok(("nice".into(), 32))
         );
     }
