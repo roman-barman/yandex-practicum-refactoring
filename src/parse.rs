@@ -9,6 +9,7 @@ use crate::parse::preceded_parse::{Preceded, preceded};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
+use crate::parse::take_parse::{Take, take};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod all_parse;
@@ -24,6 +25,7 @@ mod quoted_tag_parse;
 mod std_parse;
 mod strip_whitespace_parse;
 mod tag_parse;
+mod take_parse;
 mod unquote_parse;
 
 /// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
@@ -63,30 +65,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
         return Err(());
     }
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
-}
-
-/// Комбинатор для применения дочернего парсера N раз
-/// (аналог `take` из `nom`)
-struct Take<T> {
-    count: usize,
-    parser: T,
-}
-impl<T: Parser> Parser for Take<T> {
-    type Dest = Vec<T::Dest>;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let mut remaining = input;
-        let mut result = Vec::new();
-        for _ in 0..self.count {
-            let (new_remaining, new_result) = self.parser.parse(remaining)?;
-            result.push(new_result);
-            remaining = new_remaining;
-        }
-        Ok((remaining, result))
-    }
-}
-/// Конструктор `Take`
-fn take<T: Parser>(count: usize, parser: T) -> Take<T> {
-    Take { count, parser }
 }
 
 const AUTHDATA_SIZE: usize = 1024;
