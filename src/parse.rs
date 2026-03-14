@@ -1,3 +1,7 @@
+use crate::parse::std_parse::U32;
+
+mod std_parse;
+
 /// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
 /// что распарсить осталось'
 trait Parser {
@@ -15,34 +19,6 @@ mod stdp {
     // parsers for std types
     use super::Parser;
 
-    /// Беззнаковые числа
-    #[derive(Debug)]
-    pub struct U32;
-    impl Parser for U32 {
-        type Dest = u32;
-        fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-            let (remaining, is_hex) = input
-                .strip_prefix("0x")
-                .map_or((input, false), |remaining| (remaining, true));
-            let end_idx = remaining
-                .char_indices()
-                .find_map(|(idx, c)| match (is_hex, c) {
-                    (true, 'a'..='f' | '0'..='9' | 'A'..='F') => None,
-                    (false, '0'..='9') => None,
-                    _ => Some(idx),
-                })
-                .unwrap_or(remaining.len());
-            let value = u32::from_str_radix(&remaining[..end_idx], if is_hex { 16 } else { 10 })
-                .map_err(|_| ())?;
-            // подсказка: вместо if можно использовать tight-тип std::num::NonZeroU32
-            //            (ограничиться NonZeroU32::new(value).ok_or(()).get() - норм)
-            //            или даже заиспользовать tightness
-            if value == 0 {
-                return Err(()); // в наших логах нет нулей, ноль в операции - фикция
-            }
-            Ok((&remaining[end_idx..], value))
-        }
-    }
     /// Знаковые числа
     #[derive(Debug)]
     pub struct I32;
@@ -803,7 +779,7 @@ impl Parsable for Backet {
     type Parser = Map<
         Delimited<
             All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>,
+            Permutation<(KeyValue<Unquote>, KeyValue<U32>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -812,10 +788,7 @@ impl Parsable for Backet {
         map(
             delimited(
                 all2(strip_whitespace(tag("Backet")), strip_whitespace(tag("{"))),
-                permutation2(
-                    key_value("asset_id", unquote()),
-                    key_value("count", stdp::U32),
-                ),
+                permutation2(key_value("asset_id", unquote()), key_value("count", U32)),
                 strip_whitespace(tag("}")),
             ),
             |(asset_id, count)| Backet { asset_id, count },
@@ -832,7 +805,7 @@ impl Parsable for UserCash {
     type Parser = Map<
         Delimited<
             All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>,
+            Permutation<(KeyValue<Unquote>, KeyValue<U32>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -844,10 +817,7 @@ impl Parsable for UserCash {
                     strip_whitespace(tag("UserCash")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
-                    key_value("user_id", unquote()),
-                    key_value("count", stdp::U32),
-                ),
+                permutation2(key_value("user_id", unquote()), key_value("count", U32)),
                 strip_whitespace(tag("}")),
             ),
             |(user_id, count)| UserCash { user_id, count },
@@ -1234,7 +1204,7 @@ impl Parsable for AppLogJournalKind {
             Map<
                 Preceded<
                     StripWhitespace<Tag>,
-                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>, Tag>,
+                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<U32>)>, Tag>,
                 >,
                 fn((String, u32)) -> AppLogJournalKind,
             >,
@@ -1247,7 +1217,7 @@ impl Parsable for AppLogJournalKind {
                     StripWhitespace<Tag>,
                     Delimited<
                         Tag,
-                        Permutation<(KeyValue<Unquote>, KeyValue<Unquote>, KeyValue<stdp::U32>)>,
+                        Permutation<(KeyValue<Unquote>, KeyValue<Unquote>, KeyValue<U32>)>,
                         Tag,
                     >,
                 >,
@@ -1289,7 +1259,7 @@ impl Parsable for AppLogJournalKind {
                             tag("{"),
                             permutation2(
                                 key_value("user_id", unquote()),
-                                key_value("authorized_capital", stdp::U32),
+                                key_value("authorized_capital", U32),
                             ),
                             tag("}"),
                         ),
@@ -1314,7 +1284,7 @@ impl Parsable for AppLogJournalKind {
                             permutation3(
                                 key_value("asset_id", unquote()),
                                 key_value("user_id", unquote()),
-                                key_value("liquidity", stdp::U32),
+                                key_value("liquidity", U32),
                             ),
                             tag("}"),
                         ),
@@ -1407,7 +1377,7 @@ impl Parsable for LogLine {
     type Parser = Map<
         All<(
             <LogKind as Parsable>::Parser,
-            StripWhitespace<Preceded<Tag, stdp::U32>>,
+            StripWhitespace<Preceded<Tag, U32>>,
         )>,
         fn((LogKind, u32)) -> Self,
     >;
@@ -1415,7 +1385,7 @@ impl Parsable for LogLine {
         map(
             all2(
                 LogKind::parser(),
-                strip_whitespace(preceded(tag("requestid="), stdp::U32)),
+                strip_whitespace(preceded(tag("requestid="), U32)),
             ),
             |(kind, request_id)| LogLine { kind, request_id },
         )
@@ -1443,17 +1413,6 @@ pub static LOG_LINE_PARSER: LogLineParser = LogLineParser {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_u32() {
-        assert_eq!(stdp::U32.parse("411".into()), Ok(("".into(), 411)));
-        assert_eq!(stdp::U32.parse("411ab".into()), Ok(("ab".into(), 411)));
-        assert_eq!(stdp::U32.parse("".into()), Err(()));
-        assert_eq!(stdp::U32.parse("-3".into()), Err(()));
-        assert_eq!(stdp::U32.parse("0x03".into()), Ok(("".into(), 0x3)));
-        assert_eq!(stdp::U32.parse("0x03abg".into()), Ok(("g".into(), 0x3ab)));
-        assert_eq!(stdp::U32.parse("0x".into()), Err(()));
-    }
 
     #[test]
     fn test_i32() {
@@ -1526,7 +1485,7 @@ mod test {
             Ok(("".into(), ()))
         );
         assert_eq!(
-            strip_whitespace(stdp::U32).parse(" 42 answer".into()),
+            strip_whitespace(U32).parse(" 42 answer".into()),
             Ok(("answer".into(), 42))
         );
     }
@@ -1534,19 +1493,19 @@ mod test {
     #[test]
     fn test_delimited() {
         assert_eq!(
-            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32]".into()),
+            delimited(tag("["), U32, tag("]")).parse("[0x32]".into()),
             Ok(("".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), stdp::U32, tag("]".into())).parse("[0x32] nice".into()),
+            delimited(tag("[".into()), U32, tag("]".into())).parse("[0x32] nice".into()),
             Ok((" nice".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), stdp::U32, tag("]")).parse("0x32]".into()),
+            delimited(tag("[".into()), U32, tag("]")).parse("0x32]".into()),
             Err(())
         );
         assert_eq!(
-            delimited(tag("[".into()), stdp::U32, tag("]")).parse("[0x32".into()),
+            delimited(tag("[".into()), U32, tag("]")).parse("[0x32".into()),
             Err(())
         );
     }
@@ -1554,19 +1513,13 @@ mod test {
     #[test]
     fn test_key_value() {
         assert_eq!(
-            key_value("key", stdp::U32).parse(r#""key":32,"#.into()),
+            key_value("key", U32).parse(r#""key":32,"#.into()),
             Ok(("".into(), 32))
         );
+        assert_eq!(key_value("key", U32).parse(r#"key:32,"#.into()), Err(()));
+        assert_eq!(key_value("key", U32).parse(r#""key":32"#.into()), Err(()));
         assert_eq!(
-            key_value("key", stdp::U32).parse(r#"key:32,"#.into()),
-            Err(())
-        );
-        assert_eq!(
-            key_value("key", stdp::U32).parse(r#""key":32"#.into()),
-            Err(())
-        );
-        assert_eq!(
-            key_value("key", stdp::U32).parse(r#" "key" : 32 , nice"#.into()),
+            key_value("key", U32).parse(r#" "key" : 32 , nice"#.into()),
             Ok(("nice".into(), 32))
         );
     }
@@ -1574,15 +1527,15 @@ mod test {
     #[test]
     fn test_list() {
         assert_eq!(
-            list(stdp::U32).parse("[1,2,3,4,]".into()),
+            list(U32).parse("[1,2,3,4,]".into()),
             Ok(("".into(), vec![1, 2, 3, 4,]))
         );
         assert_eq!(
-            list(stdp::U32).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
+            list(U32).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
             Ok(("nice".into(), vec![1, 2, 3, 4,]))
         );
-        assert_eq!(list(stdp::U32).parse("1,2,3,4,".into()), Err(()));
-        assert_eq!(list(stdp::U32).parse("[]".into()), Ok(("".into(), vec![])));
+        assert_eq!(list(U32).parse("1,2,3,4,".into()), Err(()));
+        assert_eq!(list(U32).parse("[]".into()), Ok(("".into(), vec![])));
     }
 
     #[test]
