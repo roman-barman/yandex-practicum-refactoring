@@ -1,8 +1,10 @@
 use crate::parse::std_parse::{Byte, U32};
+use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod as_is_parse;
 mod std_parse;
+mod tag_parse;
 mod unquote_parse;
 
 /// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
@@ -44,22 +46,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Парсер константных строк
-/// (аналог `nom::bytes::complete::tag`)
-#[derive(Debug, Clone)]
-struct Tag {
-    tag: &'static str,
-}
-impl Parser for Tag {
-    type Dest = ();
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        Ok((input.strip_prefix(self.tag).ok_or(())?, ()))
-    }
-}
-/// Конструктор [Tag]
-fn tag(tag: &'static str) -> Tag {
-    Tag { tag }
-}
 /// Парсер [тэга](Tag), обёрнутого в кавычки
 #[derive(Debug, Clone)]
 struct QuotedTag(Tag);
@@ -74,8 +60,8 @@ impl Parser for QuotedTag {
     }
 }
 /// Конструктор [QuotedTag]
-fn quoted_tag(tag: &'static str) -> QuotedTag {
-    QuotedTag(Tag { tag })
+fn quoted_tag(tag_value: &'static str) -> QuotedTag {
+    QuotedTag(tag(tag_value))
 }
 /// Комбинатор, пробрасывающий строку без лидирующих пробелов
 #[derive(Debug, Clone)]
@@ -1350,15 +1336,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_tag() {
-        assert_eq!(
-            tag("key=").parse("key=value".into()),
-            Ok(("value".into(), ()))
-        );
-        assert_eq!(tag("key=").parse("key:value".into()), Err(()));
     }
 
     #[test]
