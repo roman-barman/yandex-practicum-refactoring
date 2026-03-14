@@ -1,11 +1,13 @@
 use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
+use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod as_is_parse;
 mod quoted_tag_parse;
 mod std_parse;
+mod strip_whitespace_parse;
 mod tag_parse;
 mod unquote_parse;
 
@@ -48,23 +50,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор, пробрасывающий строку без лидирующих пробелов
-#[derive(Debug, Clone)]
-struct StripWhitespace<T> {
-    parser: T,
-}
-impl<T: Parser> Parser for StripWhitespace<T> {
-    type Dest = T::Dest;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        self.parser
-            .parse(input.trim_start())
-            .map(|(remaining, parsed)| (remaining.trim_start(), parsed))
-    }
-}
-/// Конструктор [StripWhitespace]
-fn strip_whitespace<T: Parser>(parser: T) -> StripWhitespace<T> {
-    StripWhitespace { parser }
-}
 /// Комбинатор, чтобы распарсить нужное, окружённое в начале и в конце чем-то
 /// обязательным, не участвующем в результате.
 /// Пробрасывает строку в парсер1, оставшуюся строку после первого
@@ -1321,22 +1306,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_strip_whitespace() {
-        assert_eq!(
-            strip_whitespace(tag("hello")).parse(" hello world".into()),
-            Ok(("world".into(), ()))
-        );
-        assert_eq!(
-            strip_whitespace(tag("hello")).parse("hello".into()),
-            Ok(("".into(), ()))
-        );
-        assert_eq!(
-            strip_whitespace(U32).parse(" 42 answer".into()),
-            Ok(("answer".into(), 42))
-        );
     }
 
     #[test]
