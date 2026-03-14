@@ -1,8 +1,8 @@
 use crate::parse::all_parse::{All, all2};
 use crate::parse::delimited_parse::{Delimited, delimited};
+use crate::parse::key_value_parse::{KeyValue, key_value};
 use crate::parse::map_parse::{Map, map};
 use crate::parse::preceded_parse::{Preceded, preceded};
-use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::std_parse::{Byte, U32};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
@@ -11,6 +11,7 @@ use crate::parse::unquote_parse::{Unquote, unquote};
 mod all_parse;
 mod as_is_parse;
 mod delimited_parse;
+mod key_value_parse;
 mod map_parse;
 mod preceded_parse;
 mod quoted_tag_parse;
@@ -58,39 +59,6 @@ fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Комбинатор, который вытаскивает значения из пары `"ключ":значение,`.
-/// Для простоты реализации, запятая всегда нужна в конце пары ключ-значение,
-/// простое '"ключ":значение' читаться не будет
-#[derive(Debug, Clone)]
-struct KeyValue<T> {
-    parser: Delimited<
-        All<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,
-        StripWhitespace<T>,
-        StripWhitespace<Tag>,
-    >,
-}
-impl<T> Parser for KeyValue<T>
-where
-    T: Parser,
-{
-    type Dest = T::Dest;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        self.parser.parse(input)
-    }
-}
-/// Конструктор [KeyValue]
-fn key_value<T: Parser>(key: &'static str, value_parser: T) -> KeyValue<T> {
-    KeyValue {
-        parser: delimited(
-            all2(
-                strip_whitespace(quoted_tag(key)),
-                strip_whitespace(tag(":")),
-            ),
-            strip_whitespace(value_parser),
-            strip_whitespace(tag(",")),
-        ),
-    }
-}
 /// Комбинатор, который возвращает результаты дочерних парсеров, если их
 /// удалось применить друг после друга в любом порядке. Результат возвращается в
 /// том порядке, в каком `Permutation` был сконструирован
@@ -1143,20 +1111,6 @@ mod test {
         );
         assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
         assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
-    }
-
-    #[test]
-    fn test_key_value() {
-        assert_eq!(
-            key_value("key", U32).parse(r#""key":32,"#.into()),
-            Ok(("".into(), 32))
-        );
-        assert_eq!(key_value("key", U32).parse(r#"key:32,"#.into()), Err(()));
-        assert_eq!(key_value("key", U32).parse(r#""key":32"#.into()), Err(()));
-        assert_eq!(
-            key_value("key", U32).parse(r#" "key" : 32 , nice"#.into()),
-            Ok(("nice".into(), 32))
-        );
     }
 
     #[test]
