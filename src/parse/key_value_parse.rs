@@ -5,37 +5,43 @@ use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
 
-/// Комбинатор, который вытаскивает значения из пары `"ключ":значение,`.
-/// Для простоты реализации, запятая всегда нужна в конце пары ключ-значение,
-/// простое '"ключ":значение' читаться не будет
+/// A combinator that extracts values from a key:value pair.
+/// For ease of implementation, a comma is always required at the end of a key-value pair;
+/// a simple 'key:value' will not be read.
 #[derive(Debug, Clone)]
-pub struct KeyValue<T> {
+pub struct KeyValueParser<T> {
     parser: DelimitedParser<
         AllConditionParser<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,
         StripWhitespace<T>,
         StripWhitespace<Tag>,
     >,
 }
-impl<T> Parser for KeyValue<T>
+
+impl<T> KeyValueParser<T>
+where
+    T: Parser,
+{
+    pub fn new(key: &'static str, value_parser: T) -> KeyValueParser<T> {
+        KeyValueParser {
+            parser: DelimitedParser::new(
+                AllConditionParser::<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>::new(
+                    strip_whitespace(quoted_tag(key)),
+                    strip_whitespace(tag(":")),
+                ),
+                strip_whitespace(value_parser),
+                strip_whitespace(tag(",")),
+            ),
+        }
+    }
+}
+
+impl<T> Parser for KeyValueParser<T>
 where
     T: Parser,
 {
     type Dest = T::Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         self.parser.parse(input)
-    }
-}
-/// Конструктор [KeyValue]
-pub fn key_value<T: Parser>(key: &'static str, value_parser: T) -> KeyValue<T> {
-    KeyValue {
-        parser: DelimitedParser::new(
-            AllConditionParser::<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>::new(
-                strip_whitespace(quoted_tag(key)),
-                strip_whitespace(tag(":")),
-            ),
-            strip_whitespace(value_parser),
-            strip_whitespace(tag(",")),
-        ),
     }
 }
 
@@ -47,19 +53,19 @@ mod test {
     #[test]
     fn test_key_value() {
         assert_eq!(
-            key_value("key", U32Parser).parse(r#""key":32,"#.into()),
+            KeyValueParser::new("key", U32Parser).parse(r#""key":32,"#.into()),
             Ok(("".into(), 32))
         );
         assert_eq!(
-            key_value("key", U32Parser).parse(r#"key:32,"#.into()),
+            KeyValueParser::new("key", U32Parser).parse(r#"key:32,"#.into()),
             Err(())
         );
         assert_eq!(
-            key_value("key", U32Parser).parse(r#""key":32"#.into()),
+            KeyValueParser::new("key", U32Parser).parse(r#""key":32"#.into()),
             Err(())
         );
         assert_eq!(
-            key_value("key", U32Parser).parse(r#" "key" : 32 , nice"#.into()),
+            KeyValueParser::new("key", U32Parser).parse(r#" "key" : 32 , nice"#.into()),
             Ok(("nice".into(), 32))
         );
     }
