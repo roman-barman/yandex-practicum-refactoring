@@ -3,6 +3,7 @@ use std::num::NonZeroI32;
 
 /// Signed numbers
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct I32Parser;
 impl Parser for I32Parser {
     type Dest = i32;
