@@ -1,12 +1,23 @@
 use crate::parse::Parser;
 
-/// Комбинатор, который требует, чтобы все дочерние парсеры отработали,
-/// (аналог `all` из `nom`)
+/// A combinator that requires all child parsers to run,
+/// (analogous to `all` from `nom`)
 #[derive(Debug, Clone)]
-pub struct All<T> {
+pub struct AllConditionParser<T> {
     parser: T,
 }
-impl<A0, A1> Parser for All<(A0, A1)>
+
+impl<A0, A1> AllConditionParser<(A0, A1)>
+where
+    A0: Parser,
+    A1: Parser,
+{
+    pub fn new(a0: A0, a1: A1) -> Self {
+        AllConditionParser { parser: (a0, a1) }
+    }
+}
+
+impl<A0, A1> Parser for AllConditionParser<(A0, A1)>
 where
     A0: Parser,
     A1: Parser,
@@ -20,12 +31,22 @@ where
             .map(|(remaining, a1)| (remaining, (a0, a1)))
     }
 }
-/// Конструктор [All] для двух парсеров
-/// (в Rust нет чего-то, вроде variadic templates из C++)
-pub fn all2<A0: Parser, A1: Parser>(a0: A0, a1: A1) -> All<(A0, A1)> {
-    All { parser: (a0, a1) }
+
+impl<A0, A1, A2> AllConditionParser<(A0, A1, A2)>
+where
+    A0: Parser,
+    A1: Parser,
+    A2: Parser,
+{
+    #[allow(dead_code)]
+    pub fn new(a0: A0, a1: A1, a2: A2) -> Self {
+        AllConditionParser {
+            parser: (a0, a1, a2),
+        }
+    }
 }
-impl<A0, A1, A2> Parser for All<(A0, A1, A2)>
+
+impl<A0, A1, A2> Parser for AllConditionParser<(A0, A1, A2)>
 where
     A0: Parser,
     A1: Parser,
@@ -41,14 +62,23 @@ where
             .map(|(remaining, a2)| (remaining, (a0, a1, a2)))
     }
 }
-/// Конструктор [All] для трёх парсеров
-/// (в Rust нет чего-то, вроде variadic templates из C++)
-fn all3<A0: Parser, A1: Parser, A2: Parser>(a0: A0, a1: A1, a2: A2) -> All<(A0, A1, A2)> {
-    All {
-        parser: (a0, a1, a2),
+
+impl<A0, A1, A2, A3> AllConditionParser<(A0, A1, A2, A3)>
+where
+    A0: Parser,
+    A1: Parser,
+    A2: Parser,
+    A3: Parser,
+{
+    #[allow(dead_code)]
+    pub fn new(a0: A0, a1: A1, a2: A2, a3: A3) -> Self {
+        AllConditionParser {
+            parser: (a0, a1, a2, a3),
+        }
     }
 }
-impl<A0, A1, A2, A3> Parser for All<(A0, A1, A2, A3)>
+
+impl<A0, A1, A2, A3> Parser for AllConditionParser<(A0, A1, A2, A3)>
 where
     A0: Parser,
     A1: Parser,
@@ -66,15 +96,149 @@ where
             .map(|(remaining, a3)| (remaining, (a0, a1, a2, a3)))
     }
 }
-/// Конструктор [All] для четырёх парсеров
-/// (в Rust нет чего-то, вроде variadic templates из C++)
-fn all4<A0: Parser, A1: Parser, A2: Parser, A3: Parser>(
-    a0: A0,
-    a1: A1,
-    a2: A2,
-    a3: A3,
-) -> All<(A0, A1, A2, A3)> {
-    All {
-        parser: (a0, a1, a2, a3),
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::parse::std_parse::U32Parser;
+    use crate::parse::tag_parse::{Tag, tag};
+
+    // --- 2-tuple ---
+
+    #[test]
+    fn test_two_parsers_success_empty_remainder() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse("hello42"), Ok(("", ((), 42))));
+    }
+
+    #[test]
+    fn test_two_parsers_success_with_remainder() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse("hello42rest"), Ok(("rest", ((), 42))));
+    }
+
+    #[test]
+    fn test_two_parsers_remainder_passed_correctly() {
+        let parser = AllConditionParser::<(Tag, Tag)>::new(tag("prefix"), tag("suffix"));
+        assert_eq!(parser.parse("prefixsuffix"), Ok(("", ((), ()))));
+        assert_eq!(parser.parse("prefixsuffixEXTRA"), Ok(("EXTRA", ((), ()))));
+    }
+
+    #[test]
+    fn test_two_parsers_first_fails() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse("world42"), Err(()));
+    }
+
+    #[test]
+    fn test_two_parsers_second_fails() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse("helloworld"), Err(()));
+    }
+
+    #[test]
+    fn test_two_parsers_empty_input() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse(""), Err(()));
+    }
+
+    #[test]
+    fn test_two_parsers_first_consumes_all_second_gets_empty() {
+        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        assert_eq!(parser.parse("hello"), Err(()));
+    }
+
+    // --- 3-tuple ---
+
+    #[test]
+    fn test_three_parsers_success_empty_remainder() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        assert_eq!(parser.parse("abc"), Ok(("", ((), (), ()))));
+    }
+
+    #[test]
+    fn test_three_parsers_success_with_remainder() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, U32Parser)>::new(tag("a"), tag("b"), U32Parser);
+        assert_eq!(parser.parse("ab99rest"), Ok(("rest", ((), (), 99))));
+    }
+
+    #[test]
+    fn test_three_parsers_first_fails() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        assert_eq!(parser.parse("xbc"), Err(()));
+    }
+
+    #[test]
+    fn test_three_parsers_second_fails() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        assert_eq!(parser.parse("axc"), Err(()));
+    }
+
+    #[test]
+    fn test_three_parsers_third_fails() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        assert_eq!(parser.parse("abx"), Err(()));
+    }
+
+    #[test]
+    fn test_three_parsers_empty_input() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        assert_eq!(parser.parse(""), Err(()));
+    }
+
+    // --- 4-tuple ---
+
+    #[test]
+    fn test_four_parsers_success_empty_remainder() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse("abcd"), Ok(("", ((), (), (), ()))));
+    }
+
+    #[test]
+    fn test_four_parsers_success_with_remainder() {
+        let parser = AllConditionParser::<(Tag, Tag, Tag, U32Parser)>::new(
+            tag("a"),
+            tag("b"),
+            tag("c"),
+            U32Parser,
+        );
+        assert_eq!(parser.parse("abc5rest"), Ok(("rest", ((), (), (), 5))));
+    }
+
+    #[test]
+    fn test_four_parsers_first_fails() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse("xbcd"), Err(()));
+    }
+
+    #[test]
+    fn test_four_parsers_second_fails() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse("axcd"), Err(()));
+    }
+
+    #[test]
+    fn test_four_parsers_third_fails() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse("abxd"), Err(()));
+    }
+
+    #[test]
+    fn test_four_parsers_fourth_fails() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse("abcx"), Err(()));
+    }
+
+    #[test]
+    fn test_four_parsers_empty_input() {
+        let parser =
+            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        assert_eq!(parser.parse(""), Err(()));
     }
 }

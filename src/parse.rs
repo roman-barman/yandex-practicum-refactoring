@@ -1,4 +1,4 @@
-use crate::parse::all_parse::{All, all2};
+use crate::parse::all_parse::AllConditionParser;
 use crate::parse::alt_parse::{Alt, alt2, alt3, alt4, alt8};
 use crate::parse::delimited_parse::{Delimited, delimited};
 use crate::parse::key_value_parse::{KeyValue, key_value};
@@ -122,7 +122,7 @@ pub struct AssetDsc {
 impl Parsable for AssetDsc {
     type Parser = Map<
         Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+            AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>,
             StripWhitespace<Tag>,
         >,
@@ -132,7 +132,7 @@ impl Parsable for AssetDsc {
         // комбинаторы парсеров - это круто
         map(
             delimited(
-                all2(
+                AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("AssetDsc")),
                     strip_whitespace(tag("{")),
                 ),
@@ -152,7 +152,7 @@ pub struct Backet {
 impl Parsable for Backet {
     type Parser = Map<
         Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+            AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
@@ -161,7 +161,10 @@ impl Parsable for Backet {
     fn parser() -> Self::Parser {
         map(
             delimited(
-                all2(strip_whitespace(tag("Backet")), strip_whitespace(tag("{"))),
+                AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
+                    strip_whitespace(tag("Backet")),
+                    strip_whitespace(tag("{")),
+                ),
                 permutation2(
                     key_value("asset_id", unquote()),
                     key_value("count", U32Parser),
@@ -181,7 +184,7 @@ pub struct UserCash {
 impl Parsable for UserCash {
     type Parser = Map<
         Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+            AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
@@ -190,7 +193,7 @@ impl Parsable for UserCash {
     fn parser() -> Self::Parser {
         map(
             delimited(
-                all2(
+                AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserCash")),
                     strip_whitespace(tag("{")),
                 ),
@@ -213,7 +216,7 @@ pub struct UserBacket {
 impl Parsable for UserBacket {
     type Parser = Map<
         Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+            AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<<Backet as Parsable>::Parser>)>,
             StripWhitespace<Tag>,
         >,
@@ -222,7 +225,7 @@ impl Parsable for UserBacket {
     fn parser() -> Self::Parser {
         map(
             delimited(
-                all2(
+                AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserBacket")),
                     strip_whitespace(tag("{")),
                 ),
@@ -245,7 +248,7 @@ pub struct UserBackets {
 impl Parsable for UserBackets {
     type Parser = Map<
         Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+            AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(
                 KeyValue<Unquote>,
                 KeyValue<List<<Backet as Parsable>::Parser>>,
@@ -257,7 +260,7 @@ impl Parsable for UserBackets {
     fn parser() -> Self::Parser {
         map(
             delimited(
-                all2(
+                AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserBackets")),
                     strip_whitespace(tag("{")),
                 ),
@@ -755,7 +758,7 @@ pub struct LogLine {
 }
 impl Parsable for LogLine {
     type Parser = Map<
-        All<(
+        AllConditionParser<(
             <LogKind as Parsable>::Parser,
             StripWhitespace<Preceded<Tag, U32Parser>>,
         )>,
@@ -763,7 +766,10 @@ impl Parsable for LogLine {
     >;
     fn parser() -> Self::Parser {
         map(
-            all2(
+            AllConditionParser::<(
+                <LogKind as Parsable>::Parser,
+                StripWhitespace<Preceded<Tag, U32Parser>>,
+            )>::new(
                 LogKind::parser(),
                 strip_whitespace(preceded(tag("requestid="), U32Parser)),
             ),
@@ -821,7 +827,7 @@ mod test {
     #[test]
     fn test_asset_dsc() {
         assert_eq!(
-            all2(
+            AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                 strip_whitespace(tag("AssetDsc")),
                 strip_whitespace(tag("{"))
             )
