@@ -6,7 +6,7 @@ use crate::parse::list_parse::{List, list};
 use crate::parse::map_parse::{Map, map};
 use crate::parse::permutation_parse::{Permutation, permutation2, permutation3};
 use crate::parse::preceded_parse::{Preceded, preceded};
-use crate::parse::std_parse::{Byte, U32Parser};
+use crate::parse::std_parse::{ByteParser, U32Parser};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
 use crate::parse::take_parse::{Take, take};
@@ -74,9 +74,9 @@ const AUTHDATA_SIZE: usize = 1024;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthData([u8; AUTHDATA_SIZE]);
 impl Parsable for AuthData {
-    type Parser = Map<Take<Byte>, fn(Vec<u8>) -> Self>;
+    type Parser = Map<Take<ByteParser>, fn(Vec<u8>) -> Self>;
     fn parser() -> Self::Parser {
-        map(take(AUTHDATA_SIZE, Byte), |authdata| {
+        map(take(AUTHDATA_SIZE, ByteParser), |authdata| {
             AuthData(authdata.try_into().unwrap_or([0; AUTHDATA_SIZE]))
         })
     }
