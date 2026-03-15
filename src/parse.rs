@@ -1,6 +1,6 @@
 use crate::parse::all_parse::AllConditionParser;
 use crate::parse::alt_parse::AltConditionParser;
-use crate::parse::delimited_parse::{Delimited, delimited};
+use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::key_value_parse::{KeyValue, key_value};
 use crate::parse::list_parse::{List, list};
 use crate::parse::map_parse::{Map, map};
@@ -96,7 +96,7 @@ enum Status {
 impl Parsable for Status {
     type Parser = AltConditionParser<(
         Map<Tag, fn(()) -> Self>,
-        Map<Delimited<Tag, Unquote, Tag>, fn(String) -> Self>,
+        Map<DelimitedParser<Tag, Unquote, Tag>, fn(String) -> Self>,
     )>;
     fn parser() -> Self::Parser {
         fn to_ok(_: ()) -> Status {
@@ -107,10 +107,13 @@ impl Parsable for Status {
         }
         AltConditionParser::<(
             Map<Tag, fn(()) -> Self>,
-            Map<Delimited<Tag, Unquote, Tag>, fn(String) -> Self>,
+            Map<DelimitedParser<Tag, Unquote, Tag>, fn(String) -> Self>,
         )>::new(
             map(tag("Ok"), to_ok),
-            map(delimited(tag("Err("), unquote(), tag(")")), to_err),
+            map(
+                DelimitedParser::new(tag("Err("), unquote(), tag(")")),
+                to_err,
+            ),
         )
     }
 }
@@ -124,7 +127,7 @@ pub struct AssetDsc {
 }
 impl Parsable for AssetDsc {
     type Parser = Map<
-        Delimited<
+        DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>,
             StripWhitespace<Tag>,
@@ -134,7 +137,7 @@ impl Parsable for AssetDsc {
     fn parser() -> Self::Parser {
         // комбинаторы парсеров - это круто
         map(
-            delimited(
+            DelimitedParser::new(
                 AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("AssetDsc")),
                     strip_whitespace(tag("{")),
@@ -154,7 +157,7 @@ pub struct Backet {
 }
 impl Parsable for Backet {
     type Parser = Map<
-        Delimited<
+        DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
@@ -163,7 +166,7 @@ impl Parsable for Backet {
     >;
     fn parser() -> Self::Parser {
         map(
-            delimited(
+            DelimitedParser::new(
                 AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("Backet")),
                     strip_whitespace(tag("{")),
@@ -186,7 +189,7 @@ pub struct UserCash {
 }
 impl Parsable for UserCash {
     type Parser = Map<
-        Delimited<
+        DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
             StripWhitespace<Tag>,
@@ -195,7 +198,7 @@ impl Parsable for UserCash {
     >;
     fn parser() -> Self::Parser {
         map(
-            delimited(
+            DelimitedParser::new(
                 AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserCash")),
                     strip_whitespace(tag("{")),
@@ -218,7 +221,7 @@ pub struct UserBacket {
 }
 impl Parsable for UserBacket {
     type Parser = Map<
-        Delimited<
+        DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(KeyValue<Unquote>, KeyValue<<Backet as Parsable>::Parser>)>,
             StripWhitespace<Tag>,
@@ -227,7 +230,7 @@ impl Parsable for UserBacket {
     >;
     fn parser() -> Self::Parser {
         map(
-            delimited(
+            DelimitedParser::new(
                 AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserBacket")),
                     strip_whitespace(tag("{")),
@@ -250,7 +253,7 @@ pub struct UserBackets {
 }
 impl Parsable for UserBackets {
     type Parser = Map<
-        Delimited<
+        DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(
                 KeyValue<Unquote>,
@@ -262,7 +265,7 @@ impl Parsable for UserBackets {
     >;
     fn parser() -> Self::Parser {
         map(
-            delimited(
+            DelimitedParser::new(
                 AllConditionParser::<(StripWhitespace<Tag>, StripWhitespace<Tag>)>::new(
                     strip_whitespace(tag("UserBackets")),
                     strip_whitespace(tag("{")),
@@ -646,18 +649,22 @@ impl Parsable for AppLogJournalKind {
             Map<
                 Preceded<
                     StripWhitespace<Tag>,
-                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>, Tag>,
+                    DelimitedParser<
+                        Tag,
+                        Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
+                        Tag,
+                    >,
                 >,
                 fn((String, u32)) -> AppLogJournalKind,
             >,
             Map<
-                Preceded<StripWhitespace<Tag>, Delimited<Tag, KeyValue<Unquote>, Tag>>,
+                Preceded<StripWhitespace<Tag>, DelimitedParser<Tag, KeyValue<Unquote>, Tag>>,
                 fn(String) -> AppLogJournalKind,
             >,
             Map<
                 Preceded<
                     StripWhitespace<Tag>,
-                    Delimited<
+                    DelimitedParser<
                         Tag,
                         Permutation<(KeyValue<Unquote>, KeyValue<Unquote>, KeyValue<U32Parser>)>,
                         Tag,
@@ -668,7 +675,7 @@ impl Parsable for AppLogJournalKind {
             Map<
                 Preceded<
                     StripWhitespace<Tag>,
-                    Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>, Tag>,
+                    DelimitedParser<Tag, Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>, Tag>,
                 >,
                 fn((String, String)) -> AppLogJournalKind,
             >,
@@ -697,18 +704,22 @@ impl Parsable for AppLogJournalKind {
                 Map<
                     Preceded<
                         StripWhitespace<Tag>,
-                        Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>, Tag>,
+                        DelimitedParser<
+                            Tag,
+                            Permutation<(KeyValue<Unquote>, KeyValue<U32Parser>)>,
+                            Tag,
+                        >,
                     >,
                     fn((String, u32)) -> AppLogJournalKind,
                 >,
                 Map<
-                    Preceded<StripWhitespace<Tag>, Delimited<Tag, KeyValue<Unquote>, Tag>>,
+                    Preceded<StripWhitespace<Tag>, DelimitedParser<Tag, KeyValue<Unquote>, Tag>>,
                     fn(String) -> AppLogJournalKind,
                 >,
                 Map<
                     Preceded<
                         StripWhitespace<Tag>,
-                        Delimited<
+                        DelimitedParser<
                             Tag,
                             Permutation<(
                                 KeyValue<Unquote>,
@@ -723,7 +734,11 @@ impl Parsable for AppLogJournalKind {
                 Map<
                     Preceded<
                         StripWhitespace<Tag>,
-                        Delimited<Tag, Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>, Tag>,
+                        DelimitedParser<
+                            Tag,
+                            Permutation<(KeyValue<Unquote>, KeyValue<Unquote>)>,
+                            Tag,
+                        >,
                     >,
                     fn((String, String)) -> AppLogJournalKind,
                 >,
@@ -747,7 +762,7 @@ impl Parsable for AppLogJournalKind {
                 map(
                     preceded(
                         strip_whitespace(tag("CreateUser")),
-                        delimited(
+                        DelimitedParser::new(
                             tag("{"),
                             permutation2(
                                 key_value("user_id", unquote()),
@@ -764,14 +779,14 @@ impl Parsable for AppLogJournalKind {
                 map(
                     preceded(
                         strip_whitespace(tag("DeleteUser")),
-                        delimited(tag("{"), key_value("user_id", unquote()), tag("}")),
+                        DelimitedParser::new(tag("{"), key_value("user_id", unquote()), tag("}")),
                     ),
                     |user_id| AppLogJournalKind::DeleteUser { user_id },
                 ),
                 map(
                     preceded(
                         strip_whitespace(tag("RegisterAsset")),
-                        delimited(
+                        DelimitedParser::new(
                             tag("{"),
                             permutation3(
                                 key_value("asset_id", unquote()),
@@ -790,7 +805,7 @@ impl Parsable for AppLogJournalKind {
                 map(
                     preceded(
                         strip_whitespace(tag("UnregisterAsset")),
-                        delimited(
+                        DelimitedParser::new(
                             tag("{"),
                             permutation2(
                                 key_value("asset_id", unquote()),

@@ -1,19 +1,35 @@
 use crate::parse::Parser;
 
-/// Комбинатор, чтобы распарсить нужное, окружённое в начале и в конце чем-то
-/// обязательным, не участвующем в результате.
-/// Пробрасывает строку в парсер1, оставшуюся строку после первого
-/// парсинга - в парсер2, оставшуюся строку после второго парсинга - в парсер3.
-/// Результат парсера2 будет результатом этого комбинатора, а оставшейся
-/// строкой - строка, оставшаяся после парсера3.
-/// (аналог `delimited` из `nom`)
+/// A combinator for parsing a string,
+/// surrounded at the beginning and end by something mandatory that doesn't contribute to the result.
+/// It passes the string to parser1, the remaining string after the first parse to parser2,
+/// and the remaining string after the second parse to parser3.
+/// The result of parser2 will be the result of this combinator,
+/// and the remaining string will be the string remaining after parser3.
+/// (Similar to delimited in nom)
 #[derive(Debug, Clone)]
-pub struct Delimited<Prefix, T, Suffix> {
+pub struct DelimitedParser<Prefix, T, Suffix> {
     prefix_to_ignore: Prefix,
     dest_parser: T,
     suffix_to_ignore: Suffix,
 }
-impl<Prefix, T, Suffix> Parser for Delimited<Prefix, T, Suffix>
+
+impl<Prefix, T, Suffix> DelimitedParser<Prefix, T, Suffix>
+where
+    Prefix: Parser,
+    T: Parser,
+    Suffix: Parser,
+{
+    pub fn new(prefix_to_ignore: Prefix, dest_parser: T, suffix_to_ignore: Suffix) -> Self {
+        Self {
+            prefix_to_ignore,
+            dest_parser,
+            suffix_to_ignore,
+        }
+    }
+}
+
+impl<Prefix, T, Suffix> Parser for DelimitedParser<Prefix, T, Suffix>
 where
     Prefix: Parser,
     T: Parser,
@@ -28,23 +44,6 @@ where
             .map(|(remaining, _)| (remaining, result))
     }
 }
-/// Конструктор [Delimited]
-pub fn delimited<Prefix, T, Suffix>(
-    prefix_to_ignore: Prefix,
-    dest_parser: T,
-    suffix_to_ignore: Suffix,
-) -> Delimited<Prefix, T, Suffix>
-where
-    Prefix: Parser,
-    T: Parser,
-    Suffix: Parser,
-{
-    Delimited {
-        prefix_to_ignore,
-        dest_parser,
-        suffix_to_ignore,
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -55,19 +54,20 @@ mod test {
     #[test]
     fn test_delimited() {
         assert_eq!(
-            delimited(tag("["), U32Parser, tag("]")).parse("[0x32]".into()),
+            DelimitedParser::new(tag("["), U32Parser, tag("]")).parse("[0x32]".into()),
             Ok(("".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), U32Parser, tag("]".into())).parse("[0x32] nice".into()),
+            DelimitedParser::new(tag("[".into()), U32Parser, tag("]".into()))
+                .parse("[0x32] nice".into()),
             Ok((" nice".into(), 0x32))
         );
         assert_eq!(
-            delimited(tag("[".into()), U32Parser, tag("]")).parse("0x32]".into()),
+            DelimitedParser::new(tag("[".into()), U32Parser, tag("]")).parse("0x32]".into()),
             Err(())
         );
         assert_eq!(
-            delimited(tag("[".into()), U32Parser, tag("]")).parse("[0x32".into()),
+            DelimitedParser::new(tag("[".into()), U32Parser, tag("]")).parse("[0x32".into()),
             Err(())
         );
     }

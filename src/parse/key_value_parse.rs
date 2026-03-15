@@ -1,6 +1,6 @@
 use crate::parse::Parser;
 use crate::parse::all_parse::AllConditionParser;
-use crate::parse::delimited_parse::{Delimited, delimited};
+use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
@@ -10,7 +10,7 @@ use crate::parse::tag_parse::{Tag, tag};
 /// простое '"ключ":значение' читаться не будет
 #[derive(Debug, Clone)]
 pub struct KeyValue<T> {
-    parser: Delimited<
+    parser: DelimitedParser<
         AllConditionParser<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,
         StripWhitespace<T>,
         StripWhitespace<Tag>,
@@ -28,7 +28,7 @@ where
 /// Конструктор [KeyValue]
 pub fn key_value<T: Parser>(key: &'static str, value_parser: T) -> KeyValue<T> {
     KeyValue {
-        parser: delimited(
+        parser: DelimitedParser::new(
             AllConditionParser::<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>::new(
                 strip_whitespace(quoted_tag(key)),
                 strip_whitespace(tag(":")),
