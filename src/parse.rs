@@ -4,7 +4,7 @@ use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::key_value_parse::KeyValueParser;
 use crate::parse::list_parse::ListParser;
 use crate::parse::map_parse::MapParser;
-use crate::parse::permutation_parse::{Permutation, permutation2, permutation3};
+use crate::parse::permutation_parse::PermutationParser;
 use crate::parse::preceded_parse::{Preceded, preceded};
 use crate::parse::std_parse::{ByteParser, U32Parser};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
@@ -129,7 +129,7 @@ impl Parsable for AssetDsc {
     type Parser = MapParser<
         DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
+            PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, String)) -> Self,
@@ -142,7 +142,7 @@ impl Parsable for AssetDsc {
                     strip_whitespace(tag("AssetDsc")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
+                PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>::new(
                     KeyValueParser::new("id", unquote()),
                     KeyValueParser::new("dsc", unquote()),
                 ),
@@ -162,7 +162,7 @@ impl Parsable for Backet {
     type Parser = MapParser<
         DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
+            PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -174,7 +174,7 @@ impl Parsable for Backet {
                     strip_whitespace(tag("Backet")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
+                PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>::new(
                     KeyValueParser::new("asset_id", unquote()),
                     KeyValueParser::new("count", U32Parser),
                 ),
@@ -194,7 +194,7 @@ impl Parsable for UserCash {
     type Parser = MapParser<
         DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
+            PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
             StripWhitespace<Tag>,
         >,
         fn((String, u32)) -> Self,
@@ -206,7 +206,7 @@ impl Parsable for UserCash {
                     strip_whitespace(tag("UserCash")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
+                PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>::new(
                     KeyValueParser::new("user_id", unquote()),
                     KeyValueParser::new("count", U32Parser),
                 ),
@@ -226,7 +226,7 @@ impl Parsable for UserBacket {
     type Parser = MapParser<
         DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(
+            PermutationParser<(
                 KeyValueParser<Unquote>,
                 KeyValueParser<<Backet as Parsable>::Parser>,
             )>,
@@ -241,7 +241,10 @@ impl Parsable for UserBacket {
                     strip_whitespace(tag("UserBacket")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
+                PermutationParser::<(
+                    KeyValueParser<Unquote>,
+                    KeyValueParser<<Backet as Parsable>::Parser>,
+                )>::new(
                     KeyValueParser::new("user_id", unquote()),
                     KeyValueParser::new("backet", Backet::parser()),
                 ),
@@ -261,7 +264,7 @@ impl Parsable for UserBackets {
     type Parser = MapParser<
         DelimitedParser<
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(
+            PermutationParser<(
                 KeyValueParser<Unquote>,
                 KeyValueParser<ListParser<<Backet as Parsable>::Parser>>,
             )>,
@@ -276,7 +279,10 @@ impl Parsable for UserBackets {
                     strip_whitespace(tag("UserBackets")),
                     strip_whitespace(tag("{")),
                 ),
-                permutation2(
+                PermutationParser::<(
+                    KeyValueParser<Unquote>,
+                    KeyValueParser<ListParser<<Backet as Parsable>::Parser>>,
+                )>::new(
                     KeyValueParser::new("user_id", unquote()),
                     KeyValueParser::new("backets", ListParser::new(Backet::parser())),
                 ),
@@ -658,7 +664,7 @@ impl Parsable for AppLogJournalKind {
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
-                        Permutation<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
+                        PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
                         Tag,
                     >,
                 >,
@@ -673,7 +679,7 @@ impl Parsable for AppLogJournalKind {
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
-                        Permutation<(
+                        PermutationParser<(
                             KeyValueParser<Unquote>,
                             KeyValueParser<Unquote>,
                             KeyValueParser<U32Parser>,
@@ -688,7 +694,7 @@ impl Parsable for AppLogJournalKind {
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
-                        Permutation<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
+                        PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
                         Tag,
                     >,
                 >,
@@ -721,7 +727,7 @@ impl Parsable for AppLogJournalKind {
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
-                            Permutation<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
+                            PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>,
                             Tag,
                         >,
                     >,
@@ -739,7 +745,7 @@ impl Parsable for AppLogJournalKind {
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
-                            Permutation<(
+                            PermutationParser<(
                                 KeyValueParser<Unquote>,
                                 KeyValueParser<Unquote>,
                                 KeyValueParser<U32Parser>,
@@ -754,7 +760,7 @@ impl Parsable for AppLogJournalKind {
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
-                            Permutation<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
+                            PermutationParser<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>,
                             Tag,
                         >,
                     >,
@@ -782,7 +788,7 @@ impl Parsable for AppLogJournalKind {
                         strip_whitespace(tag("CreateUser")),
                         DelimitedParser::new(
                             tag("{"),
-                            permutation2(
+                            PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>::new(
                                 KeyValueParser::new("user_id", unquote()),
                                 KeyValueParser::new("authorized_capital", U32Parser),
                             ),
@@ -810,7 +816,7 @@ impl Parsable for AppLogJournalKind {
                         strip_whitespace(tag("RegisterAsset")),
                         DelimitedParser::new(
                             tag("{"),
-                            permutation3(
+                            PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>::new(
                                 KeyValueParser::new("asset_id", unquote()),
                                 KeyValueParser::new("user_id", unquote()),
                                 KeyValueParser::new("liquidity", U32Parser),
@@ -829,7 +835,7 @@ impl Parsable for AppLogJournalKind {
                         strip_whitespace(tag("UnregisterAsset")),
                         DelimitedParser::new(
                             tag("{"),
-                            permutation2(
+                            PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<Unquote>)>::new(
                                 KeyValueParser::new("asset_id", unquote()),
                                 KeyValueParser::new("user_id", unquote()),
                             ),
