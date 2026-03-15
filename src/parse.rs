@@ -5,7 +5,7 @@ use crate::parse::key_value_parse::KeyValueParser;
 use crate::parse::list_parse::ListParser;
 use crate::parse::map_parse::MapParser;
 use crate::parse::permutation_parse::PermutationParser;
-use crate::parse::preceded_parse::{Preceded, preceded};
+use crate::parse::preceded_parse::PrecededParser;
 use crate::parse::std_parse::{ByteParser, U32Parser};
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
@@ -404,41 +404,41 @@ pub enum AppLogJournalKind {
     SellAsset(UserBacket),
 }
 impl Parsable for SystemLogErrorKind {
-    type Parser = Preceded<
+    type Parser = PrecededParser<
         Tag,
         AltConditionParser<(
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> SystemLogErrorKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> SystemLogErrorKind,
             >,
         )>,
     >;
     fn parser() -> Self::Parser {
-        preceded(
+        PrecededParser::new(
             tag("Error"),
             AltConditionParser::<(
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> SystemLogErrorKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> SystemLogErrorKind,
                 >,
             )>::new(
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("NetworkError")),
                         strip_whitespace(unquote()),
                     ),
                     |error| SystemLogErrorKind::NetworkError(error),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("AccessDenied")),
                         strip_whitespace(unquote()),
                     ),
@@ -449,41 +449,41 @@ impl Parsable for SystemLogErrorKind {
     }
 }
 impl Parsable for SystemLogTraceKind {
-    type Parser = Preceded<
+    type Parser = PrecededParser<
         Tag,
         AltConditionParser<(
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> SystemLogTraceKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> SystemLogTraceKind,
             >,
         )>,
     >;
     fn parser() -> Self::Parser {
-        preceded(
+        PrecededParser::new(
             tag("Trace"),
             AltConditionParser::<(
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> SystemLogTraceKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> SystemLogTraceKind,
                 >,
             )>::new(
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("SendRequest")),
                         strip_whitespace(unquote()),
                     ),
                     |request| SystemLogTraceKind::SendRequest(request),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("GetResponse")),
                         strip_whitespace(unquote()),
                     ),
@@ -495,7 +495,7 @@ impl Parsable for SystemLogTraceKind {
 }
 impl Parsable for SystemLogKind {
     type Parser = StripWhitespace<
-        Preceded<
+        PrecededParser<
             Tag,
             AltConditionParser<(
                 MapParser<
@@ -510,7 +510,7 @@ impl Parsable for SystemLogKind {
         >,
     >;
     fn parser() -> Self::Parser {
-        strip_whitespace(preceded(
+        strip_whitespace(PrecededParser::new(
             tag("System::"),
             AltConditionParser::<(
                 MapParser<
@@ -533,38 +533,41 @@ impl Parsable for SystemLogKind {
     }
 }
 impl Parsable for AppLogErrorKind {
-    type Parser = Preceded<
+    type Parser = PrecededParser<
         Tag,
         AltConditionParser<(
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> AppLogErrorKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> AppLogErrorKind,
             >,
         )>,
     >;
     fn parser() -> Self::Parser {
-        preceded(
+        PrecededParser::new(
             tag("Error"),
             AltConditionParser::<(
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> AppLogErrorKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> AppLogErrorKind,
                 >,
             )>::new(
                 MapParser::new(
-                    preceded(strip_whitespace(tag("LackOf")), strip_whitespace(unquote())),
+                    PrecededParser::new(
+                        strip_whitespace(tag("LackOf")),
+                        strip_whitespace(unquote()),
+                    ),
                     |error| AppLogErrorKind::LackOf(error),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("SystemError")),
                         strip_whitespace(unquote()),
                     ),
@@ -575,77 +578,83 @@ impl Parsable for AppLogErrorKind {
     }
 }
 impl Parsable for AppLogTraceKind {
-    type Parser = Preceded<
+    type Parser = PrecededParser<
         Tag,
         AltConditionParser<(
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<<AuthData as Parsable>::Parser>>,
+                PrecededParser<
+                    StripWhitespace<Tag>,
+                    StripWhitespace<<AuthData as Parsable>::Parser>,
+                >,
                 fn(AuthData) -> AppLogTraceKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> AppLogTraceKind,
             >,
             MapParser<
-                Preceded<
+                PrecededParser<
                     StripWhitespace<Tag>,
                     StripWhitespace<<Announcements as Parsable>::Parser>,
                 >,
                 fn(Announcements) -> AppLogTraceKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                 fn(String) -> AppLogTraceKind,
             >,
         )>,
     >;
     fn parser() -> Self::Parser {
-        preceded(
+        PrecededParser::new(
             tag("Trace"),
             AltConditionParser::<(
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<<AuthData as Parsable>::Parser>>,
+                    PrecededParser<
+                        StripWhitespace<Tag>,
+                        StripWhitespace<<AuthData as Parsable>::Parser>,
+                    >,
                     fn(AuthData) -> AppLogTraceKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> AppLogTraceKind,
                 >,
                 MapParser<
-                    Preceded<
+                    PrecededParser<
                         StripWhitespace<Tag>,
                         StripWhitespace<<Announcements as Parsable>::Parser>,
                     >,
                     fn(Announcements) -> AppLogTraceKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
+                    PrecededParser<StripWhitespace<Tag>, StripWhitespace<Unquote>>,
                     fn(String) -> AppLogTraceKind,
                 >,
             )>::new(
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("Connect")),
                         strip_whitespace(AuthData::parser()),
                     ),
                     |authdata| AppLogTraceKind::Connect(authdata),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("SendRequest")),
                         strip_whitespace(unquote()),
                     ),
                     |trace| AppLogTraceKind::SendRequest(trace),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("Check")),
                         strip_whitespace(Announcements::parser()),
                     ),
                     |announcements| AppLogTraceKind::Check(announcements),
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("GetResponse")),
                         strip_whitespace(unquote()),
                     ),
@@ -656,11 +665,11 @@ impl Parsable for AppLogTraceKind {
     }
 }
 impl Parsable for AppLogJournalKind {
-    type Parser = Preceded<
+    type Parser = PrecededParser<
         Tag,
         AltConditionParser<(
             MapParser<
-                Preceded<
+                PrecededParser<
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
@@ -671,11 +680,14 @@ impl Parsable for AppLogJournalKind {
                 fn((String, u32)) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, DelimitedParser<Tag, KeyValueParser<Unquote>, Tag>>,
+                PrecededParser<
+                    StripWhitespace<Tag>,
+                    DelimitedParser<Tag, KeyValueParser<Unquote>, Tag>,
+                >,
                 fn(String) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<
+                PrecededParser<
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
@@ -690,7 +702,7 @@ impl Parsable for AppLogJournalKind {
                 fn((String, String, u32)) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<
+                PrecededParser<
                     StripWhitespace<Tag>,
                     DelimitedParser<
                         Tag,
@@ -701,29 +713,29 @@ impl Parsable for AppLogJournalKind {
                 fn((String, String)) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
+                PrecededParser<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
                 fn(UserCash) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
+                PrecededParser<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
                 fn(UserCash) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
+                PrecededParser<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
                 fn(UserBacket) -> AppLogJournalKind,
             >,
             MapParser<
-                Preceded<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
+                PrecededParser<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
                 fn(UserBacket) -> AppLogJournalKind,
             >,
         )>,
     >;
     fn parser() -> Self::Parser {
-        preceded(
+        PrecededParser::new(
             tag("Journal"),
             AltConditionParser::<(
                 MapParser<
-                    Preceded<
+                    PrecededParser<
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
@@ -734,14 +746,14 @@ impl Parsable for AppLogJournalKind {
                     fn((String, u32)) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<
+                    PrecededParser<
                         StripWhitespace<Tag>,
                         DelimitedParser<Tag, KeyValueParser<Unquote>, Tag>,
                     >,
                     fn(String) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<
+                    PrecededParser<
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
@@ -756,7 +768,7 @@ impl Parsable for AppLogJournalKind {
                     fn((String, String, u32)) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<
+                    PrecededParser<
                         StripWhitespace<Tag>,
                         DelimitedParser<
                             Tag,
@@ -767,24 +779,24 @@ impl Parsable for AppLogJournalKind {
                     fn((String, String)) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
+                    PrecededParser<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
                     fn(UserCash) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
+                    PrecededParser<StripWhitespace<Tag>, <UserCash as Parsable>::Parser>,
                     fn(UserCash) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
+                    PrecededParser<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
                     fn(UserBacket) -> AppLogJournalKind,
                 >,
                 MapParser<
-                    Preceded<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
+                    PrecededParser<StripWhitespace<Tag>, <UserBacket as Parsable>::Parser>,
                     fn(UserBacket) -> AppLogJournalKind,
                 >,
             )>::new(
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("CreateUser")),
                         DelimitedParser::new(
                             tag("{"),
@@ -801,7 +813,7 @@ impl Parsable for AppLogJournalKind {
                     },
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("DeleteUser")),
                         DelimitedParser::new(
                             tag("{"),
@@ -812,7 +824,7 @@ impl Parsable for AppLogJournalKind {
                     |user_id| AppLogJournalKind::DeleteUser { user_id },
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("RegisterAsset")),
                         DelimitedParser::new(
                             tag("{"),
@@ -831,7 +843,7 @@ impl Parsable for AppLogJournalKind {
                     },
                 ),
                 MapParser::new(
-                    preceded(
+                    PrecededParser::new(
                         strip_whitespace(tag("UnregisterAsset")),
                         DelimitedParser::new(
                             tag("{"),
@@ -845,19 +857,19 @@ impl Parsable for AppLogJournalKind {
                     |(asset_id, user_id)| AppLogJournalKind::UnregisterAsset { asset_id, user_id },
                 ),
                 MapParser::new(
-                    preceded(strip_whitespace(tag("DepositCash")), UserCash::parser()),
+                    PrecededParser::new(strip_whitespace(tag("DepositCash")), UserCash::parser()),
                     |user_cash| AppLogJournalKind::DepositCash(user_cash),
                 ),
                 MapParser::new(
-                    preceded(strip_whitespace(tag("WithdrawCash")), UserCash::parser()),
+                    PrecededParser::new(strip_whitespace(tag("WithdrawCash")), UserCash::parser()),
                     |user_cash| AppLogJournalKind::DepositCash(user_cash),
                 ),
                 MapParser::new(
-                    preceded(strip_whitespace(tag("BuyAsset")), UserBacket::parser()),
+                    PrecededParser::new(strip_whitespace(tag("BuyAsset")), UserBacket::parser()),
                     |user_backet| AppLogJournalKind::BuyAsset(user_backet),
                 ),
                 MapParser::new(
-                    preceded(strip_whitespace(tag("SellAsset")), UserBacket::parser()),
+                    PrecededParser::new(strip_whitespace(tag("SellAsset")), UserBacket::parser()),
                     |user_backet| AppLogJournalKind::SellAsset(user_backet),
                 ),
             ),
@@ -866,7 +878,7 @@ impl Parsable for AppLogJournalKind {
 }
 impl Parsable for AppLogKind {
     type Parser = StripWhitespace<
-        Preceded<
+        PrecededParser<
             Tag,
             AltConditionParser<(
                 MapParser<<AppLogErrorKind as Parsable>::Parser, fn(AppLogErrorKind) -> AppLogKind>,
@@ -879,7 +891,7 @@ impl Parsable for AppLogKind {
         >,
     >;
     fn parser() -> Self::Parser {
-        strip_whitespace(preceded(
+        strip_whitespace(PrecededParser::new(
             tag("App::"),
             AltConditionParser::<(
                 MapParser<<AppLogErrorKind as Parsable>::Parser, fn(AppLogErrorKind) -> AppLogKind>,
@@ -925,7 +937,7 @@ impl Parsable for LogLine {
     type Parser = MapParser<
         AllConditionParser<(
             <LogKind as Parsable>::Parser,
-            StripWhitespace<Preceded<Tag, U32Parser>>,
+            StripWhitespace<PrecededParser<Tag, U32Parser>>,
         )>,
         fn((LogKind, u32)) -> Self,
     >;
@@ -933,10 +945,10 @@ impl Parsable for LogLine {
         MapParser::new(
             AllConditionParser::<(
                 <LogKind as Parsable>::Parser,
-                StripWhitespace<Preceded<Tag, U32Parser>>,
+                StripWhitespace<PrecededParser<Tag, U32Parser>>,
             )>::new(
                 LogKind::parser(),
-                strip_whitespace(preceded(tag("requestid="), U32Parser)),
+                strip_whitespace(PrecededParser::new(tag("requestid="), U32Parser)),
             ),
             |(kind, request_id)| LogLine { kind, request_id },
         )
@@ -1072,7 +1084,7 @@ mod test {
     #[test]
     fn test_log_kind() {
         assert_eq!(
-            preceded(
+            PrecededParser::new(
                 strip_whitespace(tag("NetworkError")),
                 strip_whitespace(unquote())
             )
