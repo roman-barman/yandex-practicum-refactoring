@@ -2,7 +2,7 @@ use crate::parse::all_parse::AllConditionParser;
 use crate::parse::alt_parse::AltConditionParser;
 use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::key_value_parse::KeyValueParser;
-use crate::parse::list_parse::{List, list};
+use crate::parse::list_parse::ListParser;
 use crate::parse::map_parse::{Map, map};
 use crate::parse::permutation_parse::{Permutation, permutation2, permutation3};
 use crate::parse::preceded_parse::{Preceded, preceded};
@@ -263,7 +263,7 @@ impl Parsable for UserBackets {
             AllConditionParser<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
             Permutation<(
                 KeyValueParser<Unquote>,
-                KeyValueParser<List<<Backet as Parsable>::Parser>>,
+                KeyValueParser<ListParser<<Backet as Parsable>::Parser>>,
             )>,
             StripWhitespace<Tag>,
         >,
@@ -278,7 +278,7 @@ impl Parsable for UserBackets {
                 ),
                 permutation2(
                     KeyValueParser::new("user_id", unquote()),
-                    KeyValueParser::new("backets", list(Backet::parser())),
+                    KeyValueParser::new("backets", ListParser::new(Backet::parser())),
                 ),
                 strip_whitespace(tag("}")),
             ),
@@ -290,12 +290,12 @@ impl Parsable for UserBackets {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Announcements(Vec<UserBackets>);
 impl Parsable for Announcements {
-    type Parser = Map<List<<UserBackets as Parsable>::Parser>, fn(Vec<UserBackets>) -> Self>;
+    type Parser = Map<ListParser<<UserBackets as Parsable>::Parser>, fn(Vec<UserBackets>) -> Self>;
     fn parser() -> Self::Parser {
         fn from_vec(vec: Vec<UserBackets>) -> Announcements {
             Announcements(vec)
         }
-        map(list(UserBackets::parser()), from_vec)
+        map(ListParser::new(UserBackets::parser()), from_vec)
     }
 }
 

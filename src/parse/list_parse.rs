@@ -1,14 +1,26 @@
 use crate::parse::Parser;
 
-/// Комбинатор списка из любого числа элементов, которые надо читать
-/// вложенным парсером. Граница списка определяется квадратными (`[`&`]`)
-/// скобками.
-/// Для простоты реализации, после каждого элемента списка должна быть запятая
+/// A list combinator of any number of elements to be read by a nested parser.
+/// The list boundary is defined by square brackets ([&]).
+/// For ease of implementation, each list element must be followed by a comma.
 #[derive(Debug, Clone)]
-pub struct List<T> {
+pub struct ListParser<T> {
     parser: T,
 }
-impl<T: Parser> Parser for List<T> {
+
+impl<T> ListParser<T>
+where
+    T: Parser,
+{
+    pub fn new(parser: T) -> ListParser<T> {
+        ListParser { parser }
+    }
+}
+
+impl<T> Parser for ListParser<T>
+where
+    T: Parser,
+{
     type Dest = Vec<T::Dest>;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         let mut remaining = input.trim_start().strip_prefix('[').ok_or(())?.trim_start();
@@ -31,28 +43,27 @@ impl<T: Parser> Parser for List<T> {
         Err(()) // строка кончилась, не закрыв скобку
     }
 }
-/// Конструктор для [List]
-pub fn list<T: Parser>(parser: T) -> List<T> {
-    List { parser }
-}
 
 #[cfg(test)]
 mod tests {
     use crate::parse::Parser;
-    use crate::parse::list_parse::list;
+    use crate::parse::list_parse::ListParser;
     use crate::parse::std_parse::U32Parser;
 
     #[test]
     fn test_list() {
         assert_eq!(
-            list(U32Parser).parse("[1,2,3,4,]".into()),
+            ListParser::new(U32Parser).parse("[1,2,3,4,]".into()),
             Ok(("".into(), vec![1, 2, 3, 4,]))
         );
         assert_eq!(
-            list(U32Parser).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
+            ListParser::new(U32Parser).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
             Ok(("nice".into(), vec![1, 2, 3, 4,]))
         );
-        assert_eq!(list(U32Parser).parse("1,2,3,4,".into()), Err(()));
-        assert_eq!(list(U32Parser).parse("[]".into()), Ok(("".into(), vec![])));
+        assert_eq!(ListParser::new(U32Parser).parse("1,2,3,4,".into()), Err(()));
+        assert_eq!(
+            ListParser::new(U32Parser).parse("[]".into()),
+            Ok(("".into(), vec![]))
+        );
     }
 }
