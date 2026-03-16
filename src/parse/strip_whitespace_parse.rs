@@ -1,21 +1,24 @@
 use crate::parse::Parser;
 
-/// Комбинатор, пробрасывающий строку без лидирующих пробелов
+/// A combinator that skips a string without leading spaces.
 #[derive(Debug, Clone)]
-pub struct StripWhitespace<T> {
+pub struct StripWhitespaceParser<T> {
     parser: T,
 }
-impl<T: Parser> Parser for StripWhitespace<T> {
+
+impl<T> StripWhitespaceParser<T> {
+    pub fn new(parser: T) -> Self {
+        StripWhitespaceParser { parser }
+    }
+}
+
+impl<T: Parser> Parser for StripWhitespaceParser<T> {
     type Dest = T::Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         self.parser
             .parse(input.trim_start())
             .map(|(remaining, parsed)| (remaining.trim_start(), parsed))
     }
-}
-/// Конструктор [StripWhitespace]
-pub fn strip_whitespace<T: Parser>(parser: T) -> StripWhitespace<T> {
-    StripWhitespace { parser }
 }
 
 #[cfg(test)]
@@ -27,15 +30,15 @@ mod test {
     #[test]
     fn test_strip_whitespace() {
         assert_eq!(
-            strip_whitespace(tag("hello")).parse(" hello world".into()),
+            StripWhitespaceParser::new(tag("hello")).parse(" hello world".into()),
             Ok(("world".into(), ()))
         );
         assert_eq!(
-            strip_whitespace(tag("hello")).parse("hello".into()),
+            StripWhitespaceParser::new(tag("hello")).parse("hello".into()),
             Ok(("".into(), ()))
         );
         assert_eq!(
-            strip_whitespace(U32Parser).parse(" 42 answer".into()),
+            StripWhitespaceParser::new(U32Parser).parse(" 42 answer".into()),
             Ok(("answer".into(), 42))
         );
     }
