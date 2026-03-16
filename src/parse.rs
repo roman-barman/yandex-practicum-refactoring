@@ -1,3 +1,4 @@
+use crate::parsable::Parsable;
 use crate::parse::all_parse::AllConditionParser;
 use crate::parse::alt_parse::AltConditionParser;
 use crate::parse::delimited_parse::DelimitedParser;
@@ -30,15 +31,9 @@ mod unquote_parse;
 
 /// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
 /// что распарсить осталось'
-trait Parser {
+pub trait Parser {
     type Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
-}
-/// Вспомогательный трейт, чтобы писать собственный десериализатор
-/// (по решаемой задаче - отдалённый аналог `serde::Deserialize`)
-trait Parsable: Sized {
-    type Parser: Parser<Dest = Self>;
-    fn parser() -> Self::Parser;
 }
 
 /// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть
