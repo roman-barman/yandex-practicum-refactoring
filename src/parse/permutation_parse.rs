@@ -117,7 +117,7 @@ mod test {
     use crate::parse::key_value_parse::KeyValueParser;
     use crate::parse::std_parse::U32Parser;
     use crate::parse::tag_parse::TagParser;
-    use crate::parse::unquote_parse::{Unquote, unquote};
+    use crate::parse::unquote_parse::UnquoteParser;
 
     // ── PermutationParser<(A0, A1)> ──────────────────────────────────────
 
@@ -132,10 +132,11 @@ mod test {
 
     #[test]
     fn two_parsers_reversed_order() {
-        let p = PermutationParser::<(KeyValueParser<Unquote>, KeyValueParser<U32Parser>)>::new(
-            KeyValueParser::new("id", unquote()),
-            KeyValueParser::new("count", U32Parser),
-        );
+        let p =
+            PermutationParser::<(KeyValueParser<UnquoteParser>, KeyValueParser<U32Parser>)>::new(
+                KeyValueParser::new("id", UnquoteParser),
+                KeyValueParser::new("count", U32Parser),
+            );
         assert_eq!(
             p.parse(r#""count":42, "id":"foo","#),
             Ok(("", ("foo".to_string(), 42)))
@@ -252,13 +253,13 @@ mod test {
     #[test]
     fn three_parsers_result_order_preserved() {
         let p = PermutationParser::<(
-            KeyValueParser<Unquote>,
+            KeyValueParser<UnquoteParser>,
             KeyValueParser<U32Parser>,
-            KeyValueParser<Unquote>,
+            KeyValueParser<UnquoteParser>,
         )>::new(
-            KeyValueParser::new("a", unquote()),
+            KeyValueParser::new("a", UnquoteParser),
             KeyValueParser::new("b", U32Parser),
-            KeyValueParser::new("c", unquote()),
+            KeyValueParser::new("c", UnquoteParser),
         );
         assert_eq!(
             p.parse(r#""c":"z", "b":7, "a":"x","#),

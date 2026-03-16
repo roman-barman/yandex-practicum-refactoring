@@ -1,16 +1,16 @@
 use crate::parse::Parser;
 
-/// Парсер кавычек
+/// Quote parser
 #[derive(Debug, Clone)]
-pub struct Unquote;
-impl Parser for Unquote {
+pub struct UnquoteParser;
+impl Parser for UnquoteParser {
     type Dest = String;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         do_unquote(input)
     }
 }
 
-/// Распарсить строку, которую ранее [обернули в кавычки](quote)
+/// Parse the string that was previously [wrapped in quotes](quote)
 // `"abc\"def\\ghi"nice` -> (`abcd"def\ghi`, `nice`)
 fn do_unquote(input: &str) -> Result<(&str, String), ()> {
     let mut result = String::new();
@@ -30,12 +30,7 @@ fn do_unquote(input: &str) -> Result<(&str, String), ()> {
             }
         }
     }
-    Err(()) // строка кончилась, не закрыв кавычку
-}
-
-/// Конструктор [Unquote]
-pub fn unquote() -> Unquote {
-    Unquote
+    Err(())
 }
 
 #[cfg(test)]
@@ -45,14 +40,14 @@ mod test {
     #[test]
     fn test_unquote() {
         assert_eq!(
-            Unquote.parse(r#""411""#.into()),
+            UnquoteParser.parse(r#""411""#.into()),
             Ok(("".into(), "411".into()))
         );
-        assert_eq!(Unquote.parse(r#" "411""#.into()), Err(()));
-        assert_eq!(Unquote.parse(r#"411"#.into()), Err(()));
+        assert_eq!(UnquoteParser.parse(r#" "411""#.into()), Err(()));
+        assert_eq!(UnquoteParser.parse(r#"411"#.into()), Err(()));
 
         assert_eq!(
-            Unquote.parse(r#""ni\\c\"e""#.into()),
+            UnquoteParser.parse(r#""ni\\c\"e""#.into()),
             Ok(("".into(), r#"ni\c"e"#.into()))
         );
     }
