@@ -1,14 +1,14 @@
 use crate::parsable::Parsable;
-use crate::parse::all_parse::AllConditionParser;
+pub(crate) use crate::parse::all_parse::AllConditionParser;
 pub(crate) use crate::parse::alt_parse::AltConditionParser;
 pub(crate) use crate::parse::delimited_parse::DelimitedParser;
-use crate::parse::key_value_parse::KeyValueParser;
+pub(crate) use crate::parse::key_value_parse::KeyValueParser;
 use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
-use crate::parse::permutation_parse::PermutationParser;
+pub(crate) use crate::parse::permutation_parse::PermutationParser;
 use crate::parse::preceded_parse::PrecededParser;
 use crate::parse::std_parse::U32Parser;
-use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
+pub(crate) use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
 pub(crate) use crate::parse::tag_parse::TagParser;
 pub(crate) use crate::parse::unquote_parse::UnquoteParser;
 
@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::AuthData;
+use crate::entities::{AssetDsc, AuthData};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -61,46 +61,6 @@ enum Either<Left, Right> {
     Right(Right),
 }
 
-/// Пара 'сокращённое название предмета' - 'его описание'
-#[derive(Debug, Clone, PartialEq)]
-pub struct AssetDsc {
-    // `dsc` aka `description`
-    pub id: String,
-    pub dsc: String,
-}
-impl Parsable for AssetDsc {
-    type Parser = MapParser<
-        DelimitedParser<
-            AllConditionParser<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>,
-            )>,
-            PermutationParser<(KeyValueParser<UnquoteParser>, KeyValueParser<UnquoteParser>)>,
-            StripWhitespaceParser<TagParser>,
-        >,
-        fn((String, String)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        // комбинаторы парсеров - это круто
-        MapParser::new(
-            DelimitedParser::new(
-                AllConditionParser::<(
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<TagParser>,
-                )>::new(
-                    StripWhitespaceParser::new(TagParser::new("AssetDsc")),
-                    StripWhitespaceParser::new(TagParser::new("{")),
-                ),
-                PermutationParser::<(KeyValueParser<UnquoteParser>, KeyValueParser<UnquoteParser>)>::new(
-                    KeyValueParser::new("id", UnquoteParser),
-                    KeyValueParser::new("dsc", UnquoteParser),
-                ),
-                StripWhitespaceParser::new(TagParser::new("}")),
-            ),
-            |(id, dsc)| AssetDsc { id, dsc },
-        )
-    }
-}
 /// Сведение о предмете в некотором количестве
 #[derive(Debug, Clone, PartialEq)]
 pub struct Backet {
@@ -1051,65 +1011,6 @@ mod test {
     fn test_quote() {
         assert_eq!(quote(r#"411"#), r#""411""#.to_string());
         assert_eq!(quote(r#"4\11""#), r#""4\\11\"""#.to_string());
-    }
-
-    #[test]
-    fn test_asset_dsc() {
-        assert_eq!(
-            AllConditionParser::<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>
-            )>::new(
-                StripWhitespaceParser::new(TagParser::new("AssetDsc")),
-                StripWhitespaceParser::new(TagParser::new("{"))
-            )
-            .parse(" AssetDsc { ".into()),
-            Ok(("".into(), ((), ())))
-        );
-
-        assert_eq!(
-            AssetDsc::parser().parse(r#"AssetDsc{"id":"usd","dsc":"USA dollar",}"#.into()),
-            Ok((
-                "".into(),
-                AssetDsc {
-                    id: "usd".into(),
-                    dsc: "USA dollar".into()
-                }
-            ))
-        );
-        assert_eq!(
-            AssetDsc::parser()
-                .parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } "#.into()),
-            Ok((
-                "".into(),
-                AssetDsc {
-                    id: "usd".into(),
-                    dsc: "USA dollar".into()
-                }
-            ))
-        );
-        assert_eq!(
-            AssetDsc::parser()
-                .parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } nice "#.into()),
-            Ok((
-                "nice ".into(),
-                AssetDsc {
-                    id: "usd".into(),
-                    dsc: "USA dollar".into()
-                }
-            ))
-        );
-
-        assert_eq!(
-            AssetDsc::parser().parse(r#"AssetDsc{"dsc":"USA dollar","id":"usd",}"#.into()),
-            Ok((
-                "".into(),
-                AssetDsc {
-                    id: "usd".into(),
-                    dsc: "USA dollar".into()
-                }
-            ))
-        );
     }
 
     #[test]

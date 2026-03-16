@@ -1,4 +1,6 @@
+mod asset_dsc;
 mod auth_data;
 mod status;
 
+pub(crate) use asset_dsc::AssetDsc;
 pub(crate) use auth_data::AuthData;
