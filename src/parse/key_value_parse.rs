@@ -1,7 +1,7 @@
 use crate::parse::Parser;
 use crate::parse::all_parse::AllConditionParser;
 use crate::parse::delimited_parse::DelimitedParser;
-use crate::parse::quoted_tag_parse::{QuotedTag, quoted_tag};
+use crate::parse::quoted_tag_parse::QuotedTagParser;
 use crate::parse::strip_whitespace_parse::{StripWhitespace, strip_whitespace};
 use crate::parse::tag_parse::{Tag, tag};
 
@@ -11,7 +11,7 @@ use crate::parse::tag_parse::{Tag, tag};
 #[derive(Debug, Clone)]
 pub struct KeyValueParser<T> {
     parser: DelimitedParser<
-        AllConditionParser<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,
+        AllConditionParser<(StripWhitespace<QuotedTagParser>, StripWhitespace<Tag>)>,
         StripWhitespace<T>,
         StripWhitespace<Tag>,
     >,
@@ -24,8 +24,8 @@ where
     pub fn new(key: &'static str, value_parser: T) -> KeyValueParser<T> {
         KeyValueParser {
             parser: DelimitedParser::new(
-                AllConditionParser::<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>::new(
-                    strip_whitespace(quoted_tag(key)),
+                AllConditionParser::<(StripWhitespace<QuotedTagParser>, StripWhitespace<Tag>)>::new(
+                    strip_whitespace(QuotedTagParser::new(key)),
                     strip_whitespace(tag(":")),
                 ),
                 strip_whitespace(value_parser),

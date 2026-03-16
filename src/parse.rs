@@ -56,16 +56,6 @@ fn quote(input: &str) -> String {
     result.push('"');
     result
 }
-/// Распарсить строку, обёрную в кавычки
-/// (сокращённая версия [do_unquote], в которой вложенные кавычки не предусмотрены)
-fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
-    let input = input.strip_prefix("\"").ok_or(())?;
-    let quote_byteidx = input.find('"').ok_or(())?;
-    if 0 == quote_byteidx || Some("\\") == input.get(quote_byteidx - 1..quote_byteidx) {
-        return Err(());
-    }
-    Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
-}
 
 const AUTHDATA_SIZE: usize = 1024;
 
@@ -981,16 +971,6 @@ mod test {
     fn test_quote() {
         assert_eq!(quote(r#"411"#), r#""411""#.to_string());
         assert_eq!(quote(r#"4\11""#), r#""4\\11\"""#.to_string());
-    }
-
-    #[test]
-    fn test_do_unquote_non_escaped() {
-        assert_eq!(
-            do_unquote_non_escaped(r#""411""#.into()),
-            Ok(("".into(), "411".into()))
-        );
-        assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
-        assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
     }
 
     #[test]

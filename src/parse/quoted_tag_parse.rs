@@ -1,10 +1,17 @@
+use crate::parse::Parser;
 use crate::parse::tag_parse::{Tag, tag};
-use crate::parse::{Parser, do_unquote_non_escaped};
 
-/// Парсер [тэга](Tag), обёрнутого в кавычки
+/// Parser for a [tag](Tag) wrapped in quotes
 #[derive(Debug, Clone)]
-pub struct QuotedTag(Tag);
-impl Parser for QuotedTag {
+pub struct QuotedTagParser(Tag);
+
+impl QuotedTagParser {
+    pub fn new(tag_value: &'static str) -> Self {
+        QuotedTagParser(tag(tag_value))
+    }
+}
+
+impl Parser for QuotedTagParser {
     type Dest = ();
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         let (remaining, candidate) = do_unquote_non_escaped(input)?;
@@ -14,9 +21,15 @@ impl Parser for QuotedTag {
         Ok((remaining, ()))
     }
 }
-/// Конструктор [QuotedTag]
-pub fn quoted_tag(tag_value: &'static str) -> QuotedTag {
-    QuotedTag(tag(tag_value))
+
+/// Parse a quoted string (a shortened version of do_unquote that doesn't allow for nested quotes)
+fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
+    let input = input.strip_prefix("\"").ok_or(())?;
+    let quote_byte_idx = input.find('"').ok_or(())?;
+    if 0 == quote_byte_idx || Some("\\") == input.get(quote_byte_idx - 1..quote_byte_idx) {
+        return Err(());
+    }
+    Ok((&input[1 + quote_byte_idx..], &input[..quote_byte_idx]))
 }
 
 #[cfg(test)]
@@ -26,10 +39,26 @@ mod test {
     #[test]
     fn test_quoted_tag() {
         assert_eq!(
-            quoted_tag("key").parse(r#""key"=value"#.into()),
+            QuotedTagParser::new("key").parse(r#""key"=value"#.into()),
             Ok(("=value".into(), ()))
         );
-        assert_eq!(quoted_tag("key").parse(r#""key:"value"#.into()), Err(()));
-        assert_eq!(quoted_tag("key").parse(r#"key=value"#.into()), Err(()));
+        assert_eq!(
+            QuotedTagParser::new("key").parse(r#""key:"value"#.into()),
+            Err(())
+        );
+        assert_eq!(
+            QuotedTagParser::new("key").parse(r#"key=value"#.into()),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_do_unquote_non_escaped() {
+        assert_eq!(
+            do_unquote_non_escaped(r#""411""#.into()),
+            Ok(("".into(), "411".into()))
+        );
+        assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
+        assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
     }
 }
