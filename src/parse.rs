@@ -9,7 +9,7 @@ use crate::parse::preceded_parse::PrecededParser;
 use crate::parse::std_parse::{ByteParser, U32Parser};
 use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
 use crate::parse::tag_parse::TagParser;
-use crate::parse::take_parse::{Take, take};
+use crate::parse::take_parse::TakeParser;
 use crate::parse::unquote_parse::{Unquote, unquote};
 
 mod all_parse;
@@ -64,9 +64,9 @@ const AUTHDATA_SIZE: usize = 1024;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthData([u8; AUTHDATA_SIZE]);
 impl Parsable for AuthData {
-    type Parser = MapParser<Take<ByteParser>, fn(Vec<u8>) -> Self>;
+    type Parser = MapParser<TakeParser<ByteParser>, fn(Vec<u8>) -> Self>;
     fn parser() -> Self::Parser {
-        MapParser::new(take(AUTHDATA_SIZE, ByteParser), |authdata| {
+        MapParser::new(TakeParser::new(AUTHDATA_SIZE, ByteParser), |authdata| {
             AuthData(authdata.try_into().unwrap_or([0; AUTHDATA_SIZE]))
         })
     }
