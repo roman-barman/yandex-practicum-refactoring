@@ -7,7 +7,7 @@ use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
 pub(crate) use crate::parse::permutation_parse::PermutationParser;
 use crate::parse::preceded_parse::PrecededParser;
-use crate::parse::std_parse::U32Parser;
+pub(crate) use crate::parse::std_parse::U32Parser;
 pub(crate) use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
 pub(crate) use crate::parse::tag_parse::TagParser;
 pub(crate) use crate::parse::unquote_parse::UnquoteParser;
@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{AssetDsc, AuthData};
+use crate::entities::{AssetDsc, AuthData, Bucket};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -59,45 +59,6 @@ fn quote(input: &str) -> String {
 enum Either<Left, Right> {
     Left(Left),
     Right(Right),
-}
-
-/// Сведение о предмете в некотором количестве
-#[derive(Debug, Clone, PartialEq)]
-pub struct Backet {
-    pub asset_id: String,
-    pub count: u32,
-}
-impl Parsable for Backet {
-    type Parser = MapParser<
-        DelimitedParser<
-            AllConditionParser<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>,
-            )>,
-            PermutationParser<(KeyValueParser<UnquoteParser>, KeyValueParser<U32Parser>)>,
-            StripWhitespaceParser<TagParser>,
-        >,
-        fn((String, u32)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        MapParser::new(
-            DelimitedParser::new(
-                AllConditionParser::<(
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<TagParser>,
-                )>::new(
-                    StripWhitespaceParser::new(TagParser::new("Backet")),
-                    StripWhitespaceParser::new(TagParser::new("{")),
-                ),
-                PermutationParser::<(KeyValueParser<UnquoteParser>, KeyValueParser<U32Parser>)>::new(
-                    KeyValueParser::new("asset_id", UnquoteParser),
-                    KeyValueParser::new("count", U32Parser),
-                ),
-                StripWhitespaceParser::new(TagParser::new("}")),
-            ),
-            |(asset_id, count)| Backet { asset_id, count },
-        )
-    }
 }
 /// Фиатные деньги конкретного пользователя
 #[derive(Debug, Clone, PartialEq)]
@@ -141,7 +102,7 @@ impl Parsable for UserCash {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBacket {
     pub user_id: String,
-    pub backet: Backet,
+    pub backet: Bucket,
 }
 impl Parsable for UserBacket {
     type Parser = MapParser<
@@ -152,11 +113,11 @@ impl Parsable for UserBacket {
             )>,
             PermutationParser<(
                 KeyValueParser<UnquoteParser>,
-                KeyValueParser<<Backet as Parsable>::Parser>,
+                KeyValueParser<<Bucket as Parsable>::Parser>,
             )>,
             StripWhitespaceParser<TagParser>,
         >,
-        fn((String, Backet)) -> Self,
+        fn((String, Bucket)) -> Self,
     >;
     fn parser() -> Self::Parser {
         MapParser::new(
@@ -170,10 +131,10 @@ impl Parsable for UserBacket {
                 ),
                 PermutationParser::<(
                     KeyValueParser<UnquoteParser>,
-                    KeyValueParser<<Backet as Parsable>::Parser>,
+                    KeyValueParser<<Bucket as Parsable>::Parser>,
                 )>::new(
                     KeyValueParser::new("user_id", UnquoteParser),
-                    KeyValueParser::new("backet", Backet::parser()),
+                    KeyValueParser::new("backet", Bucket::parser()),
                 ),
                 StripWhitespaceParser::new(TagParser::new("}")),
             ),
@@ -185,7 +146,7 @@ impl Parsable for UserBacket {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBackets {
     pub user_id: String,
-    pub backets: Vec<Backet>,
+    pub backets: Vec<Bucket>,
 }
 impl Parsable for UserBackets {
     type Parser = MapParser<
@@ -196,11 +157,11 @@ impl Parsable for UserBackets {
             )>,
             PermutationParser<(
                 KeyValueParser<UnquoteParser>,
-                KeyValueParser<ListParser<<Backet as Parsable>::Parser>>,
+                KeyValueParser<ListParser<<Bucket as Parsable>::Parser>>,
             )>,
             StripWhitespaceParser<TagParser>,
         >,
-        fn((String, Vec<Backet>)) -> Self,
+        fn((String, Vec<Bucket>)) -> Self,
     >;
     fn parser() -> Self::Parser {
         MapParser::new(
@@ -214,10 +175,10 @@ impl Parsable for UserBackets {
                 ),
                 PermutationParser::<(
                     KeyValueParser<UnquoteParser>,
-                    KeyValueParser<ListParser<<Backet as Parsable>::Parser>>,
+                    KeyValueParser<ListParser<<Bucket as Parsable>::Parser>>,
                 )>::new(
                     KeyValueParser::new("user_id", UnquoteParser),
-                    KeyValueParser::new("backets", ListParser::new(Backet::parser())),
+                    KeyValueParser::new("backets", ListParser::new(Bucket::parser())),
                 ),
                 StripWhitespaceParser::new(TagParser::new("}")),
             ),
@@ -246,8 +207,8 @@ pub fn just_parse_asset_dsc(input: &str) -> Result<(&str, AssetDsc), ()> {
     <AssetDsc as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [Backet]
-pub fn just_parse_backet(input: &str) -> Result<(&str, Backet), ()> {
-    <Backet as Parsable>::parser().parse(input)
+pub fn just_parse_backet(input: &str) -> Result<(&str, Bucket), ()> {
+    <Bucket as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [UserCash]
 pub fn just_user_cash(input: &str) -> Result<(&str, UserCash), ()> {
@@ -1014,30 +975,6 @@ mod test {
     }
 
     #[test]
-    fn test_backet() {
-        assert_eq!(
-            Backet::parser().parse(r#"Backet{"asset_id":"usd","count":42,}"#.into()),
-            Ok((
-                "".into(),
-                Backet {
-                    asset_id: "usd".into(),
-                    count: 42
-                }
-            ))
-        );
-        assert_eq!(
-            Backet::parser().parse(r#"Backet{"count":42,"asset_id":"usd",}"#.into()),
-            Ok((
-                "".into(),
-                Backet {
-                    asset_id: "usd".into(),
-                    count: 42
-                }
-            ))
-        );
-    }
-
-    #[test]
     fn test_log_kind() {
         assert_eq!(
             PrecededParser::new(
@@ -1095,6 +1032,6 @@ mod test {
                 )))
             ))
         );
-        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBacket{user_id: "Steeve".into(), backet: Backet{asset_id: "bayc".into(),count:1}}))))));
+        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBacket{user_id: "Steeve".into(), backet: Bucket{asset_id: "bayc".into(),count:1}}))))));
     }
 }
