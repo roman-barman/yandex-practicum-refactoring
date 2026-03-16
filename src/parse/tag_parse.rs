@@ -1,20 +1,22 @@
 use crate::parse::Parser;
 
-/// Парсер константных строк
-/// (аналог `nom::bytes::complete::tag`)
+/// Constant string parser (similar to nom::bytes::complete::tag)
 #[derive(Debug, Clone)]
-pub struct Tag {
+pub struct TagParser {
     tag: &'static str,
 }
-impl Parser for Tag {
+
+impl TagParser {
+    pub fn new(tag: &'static str) -> Self {
+        TagParser { tag }
+    }
+}
+
+impl Parser for TagParser {
     type Dest = ();
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         Ok((input.strip_prefix(self.tag).ok_or(())?, ()))
     }
-}
-/// Конструктор [Tag]
-pub fn tag(tag: &'static str) -> Tag {
-    Tag { tag }
 }
 
 #[cfg(test)]
@@ -24,9 +26,9 @@ mod test {
     #[test]
     fn test_tag() {
         assert_eq!(
-            tag("key=").parse("key=value".into()),
+            TagParser::new("key=").parse("key=value".into()),
             Ok(("value".into(), ()))
         );
-        assert_eq!(tag("key=").parse("key:value".into()), Err(()));
+        assert_eq!(TagParser::new("key=").parse("key:value".into()), Err(()));
     }
 }

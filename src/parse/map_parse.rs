@@ -27,7 +27,7 @@ impl<T: Parser, Dest: Sized, M: Fn(T::Dest) -> Dest> Parser for MapParser<T, M> 
 mod tests {
     use super::*;
     use crate::parse::as_is_parse::AsIsParser;
-    use crate::parse::tag_parse::tag;
+    use crate::parse::tag_parse::TagParser;
 
     #[test]
     fn map_transforms_result() {
@@ -37,13 +37,13 @@ mod tests {
 
     #[test]
     fn map_preserves_remaining_input() {
-        let parser = MapParser::new(tag("key="), |_| 42u32);
+        let parser = MapParser::new(TagParser::new("key="), |_| 42u32);
         assert_eq!(parser.parse("key=value"), Ok(("value", 42)));
     }
 
     #[test]
     fn map_propagates_child_error() {
-        let parser = MapParser::new(tag("key="), |_| 42u32);
+        let parser = MapParser::new(TagParser::new("key="), |_| 42u32);
         assert_eq!(parser.parse("no_match"), Err(()));
     }
 }

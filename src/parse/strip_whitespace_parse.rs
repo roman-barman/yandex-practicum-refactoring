@@ -25,16 +25,16 @@ impl<T: Parser> Parser for StripWhitespaceParser<T> {
 mod test {
     use super::*;
     use crate::parse::std_parse::U32Parser;
-    use crate::parse::tag_parse::tag;
+    use crate::parse::tag_parse::TagParser;
 
     #[test]
     fn test_strip_whitespace() {
         assert_eq!(
-            StripWhitespaceParser::new(tag("hello")).parse(" hello world".into()),
+            StripWhitespaceParser::new(TagParser::new("hello")).parse(" hello world".into()),
             Ok(("world".into(), ()))
         );
         assert_eq!(
-            StripWhitespaceParser::new(tag("hello")).parse("hello".into()),
+            StripWhitespaceParser::new(TagParser::new("hello")).parse("hello".into()),
             Ok(("".into(), ()))
         );
         assert_eq!(

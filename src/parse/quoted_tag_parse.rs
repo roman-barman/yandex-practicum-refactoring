@@ -1,13 +1,13 @@
 use crate::parse::Parser;
-use crate::parse::tag_parse::{Tag, tag};
+use crate::parse::tag_parse::TagParser;
 
 /// Parser for a [tag](Tag) wrapped in quotes
 #[derive(Debug, Clone)]
-pub struct QuotedTagParser(Tag);
+pub struct QuotedTagParser(TagParser);
 
 impl QuotedTagParser {
     pub fn new(tag_value: &'static str) -> Self {
-        QuotedTagParser(tag(tag_value))
+        QuotedTagParser(TagParser::new(tag_value))
     }
 }
 

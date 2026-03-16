@@ -37,12 +37,12 @@ where
 mod test {
     use super::*;
     use crate::parse::std_parse::U32Parser;
-    use crate::parse::tag_parse::tag;
+    use crate::parse::tag_parse::TagParser;
 
     #[test]
     fn test_preceded_success() {
         assert_eq!(
-            PrecededParser::new(tag("value="), U32Parser).parse("value=42 rest"),
+            PrecededParser::new(TagParser::new("value="), U32Parser).parse("value=42 rest"),
             Ok((" rest", 42))
         );
     }
@@ -50,7 +50,7 @@ mod test {
     #[test]
     fn test_preceded_consumes_fully() {
         assert_eq!(
-            PrecededParser::new(tag("a"), U32Parser).parse("a1"),
+            PrecededParser::new(TagParser::new("a"), U32Parser).parse("a1"),
             Ok(("", 1))
         );
     }
@@ -58,7 +58,7 @@ mod test {
     #[test]
     fn test_preceded_prefix_mismatch() {
         assert_eq!(
-            PrecededParser::new(tag("key="), U32Parser).parse("val=42"),
+            PrecededParser::new(TagParser::new("key="), U32Parser).parse("val=42"),
             Err(())
         );
     }
@@ -66,7 +66,7 @@ mod test {
     #[test]
     fn test_preceded_dest_parser_fails() {
         assert_eq!(
-            PrecededParser::new(tag("key="), U32Parser).parse("key=not_a_number"),
+            PrecededParser::new(TagParser::new("key="), U32Parser).parse("key=not_a_number"),
             Err(())
         );
     }
@@ -74,7 +74,7 @@ mod test {
     #[test]
     fn test_preceded_empty_input() {
         assert_eq!(
-            PrecededParser::new(tag("key="), U32Parser).parse(""),
+            PrecededParser::new(TagParser::new("key="), U32Parser).parse(""),
             Err(())
         );
     }
@@ -82,7 +82,7 @@ mod test {
     #[test]
     fn test_preceded_only_prefix() {
         assert_eq!(
-            PrecededParser::new(tag("key="), U32Parser).parse("key="),
+            PrecededParser::new(TagParser::new("key="), U32Parser).parse("key="),
             Err(())
         );
     }

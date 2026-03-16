@@ -101,50 +101,59 @@ where
 mod test {
     use super::*;
     use crate::parse::std_parse::U32Parser;
-    use crate::parse::tag_parse::{Tag, tag};
+    use crate::parse::tag_parse::TagParser;
 
     // --- 2-tuple ---
 
     #[test]
     fn test_two_parsers_success_empty_remainder() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse("hello42"), Ok(("", ((), 42))));
     }
 
     #[test]
     fn test_two_parsers_success_with_remainder() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse("hello42rest"), Ok(("rest", ((), 42))));
     }
 
     #[test]
     fn test_two_parsers_remainder_passed_correctly() {
-        let parser = AllConditionParser::<(Tag, Tag)>::new(tag("prefix"), tag("suffix"));
+        let parser = AllConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("prefix"),
+            TagParser::new("suffix"),
+        );
         assert_eq!(parser.parse("prefixsuffix"), Ok(("", ((), ()))));
         assert_eq!(parser.parse("prefixsuffixEXTRA"), Ok(("EXTRA", ((), ()))));
     }
 
     #[test]
     fn test_two_parsers_first_fails() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse("world42"), Err(()));
     }
 
     #[test]
     fn test_two_parsers_second_fails() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse("helloworld"), Err(()));
     }
 
     #[test]
     fn test_two_parsers_empty_input() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse(""), Err(()));
     }
 
     #[test]
     fn test_two_parsers_first_consumes_all_second_gets_empty() {
-        let parser = AllConditionParser::<(Tag, U32Parser)>::new(tag("hello"), U32Parser);
+        let parser =
+            AllConditionParser::<(TagParser, U32Parser)>::new(TagParser::new("hello"), U32Parser);
         assert_eq!(parser.parse("hello"), Err(()));
     }
 
@@ -152,38 +161,61 @@ mod test {
 
     #[test]
     fn test_three_parsers_success_empty_remainder() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("abc"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn test_three_parsers_success_with_remainder() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, U32Parser)>::new(tag("a"), tag("b"), U32Parser);
+        let parser = AllConditionParser::<(TagParser, TagParser, U32Parser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            U32Parser,
+        );
         assert_eq!(parser.parse("ab99rest"), Ok(("rest", ((), (), 99))));
     }
 
     #[test]
     fn test_three_parsers_first_fails() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("xbc"), Err(()));
     }
 
     #[test]
     fn test_three_parsers_second_fails() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("axc"), Err(()));
     }
 
     #[test]
     fn test_three_parsers_third_fails() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("abx"), Err(()));
     }
 
     #[test]
     fn test_three_parsers_empty_input() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse(""), Err(()));
     }
 
@@ -191,17 +223,21 @@ mod test {
 
     #[test]
     fn test_four_parsers_success_empty_remainder() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("abcd"), Ok(("", ((), (), (), ()))));
     }
 
     #[test]
     fn test_four_parsers_success_with_remainder() {
-        let parser = AllConditionParser::<(Tag, Tag, Tag, U32Parser)>::new(
-            tag("a"),
-            tag("b"),
-            tag("c"),
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, U32Parser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
             U32Parser,
         );
         assert_eq!(parser.parse("abc5rest"), Ok(("rest", ((), (), (), 5))));
@@ -209,36 +245,56 @@ mod test {
 
     #[test]
     fn test_four_parsers_first_fails() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("xbcd"), Err(()));
     }
 
     #[test]
     fn test_four_parsers_second_fails() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("axcd"), Err(()));
     }
 
     #[test]
     fn test_four_parsers_third_fails() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("abxd"), Err(()));
     }
 
     #[test]
     fn test_four_parsers_fourth_fails() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("abcx"), Err(()));
     }
 
     #[test]
     fn test_four_parsers_empty_input() {
-        let parser =
-            AllConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AllConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse(""), Err(()));
     }
 }

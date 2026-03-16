@@ -49,25 +49,32 @@ where
 mod test {
     use super::*;
     use crate::parse::std_parse::U32Parser;
-    use crate::parse::tag_parse::tag;
+    use crate::parse::tag_parse::TagParser;
 
     #[test]
     fn test_delimited() {
         assert_eq!(
-            DelimitedParser::new(tag("["), U32Parser, tag("]")).parse("[0x32]".into()),
+            DelimitedParser::new(TagParser::new("["), U32Parser, TagParser::new("]"))
+                .parse("[0x32]".into()),
             Ok(("".into(), 0x32))
         );
         assert_eq!(
-            DelimitedParser::new(tag("[".into()), U32Parser, tag("]".into()))
-                .parse("[0x32] nice".into()),
+            DelimitedParser::new(
+                TagParser::new("[".into()),
+                U32Parser,
+                TagParser::new("]".into())
+            )
+            .parse("[0x32] nice".into()),
             Ok((" nice".into(), 0x32))
         );
         assert_eq!(
-            DelimitedParser::new(tag("[".into()), U32Parser, tag("]")).parse("0x32]".into()),
+            DelimitedParser::new(TagParser::new("[".into()), U32Parser, TagParser::new("]"))
+                .parse("0x32]".into()),
             Err(())
         );
         assert_eq!(
-            DelimitedParser::new(tag("[".into()), U32Parser, tag("]")).parse("[0x32".into()),
+            DelimitedParser::new(TagParser::new("[".into()), U32Parser, TagParser::new("]"))
+                .parse("[0x32".into()),
             Err(())
         );
     }

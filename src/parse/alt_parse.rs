@@ -160,44 +160,62 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::parse::tag_parse::{Tag, tag};
+    use crate::parse::tag_parse::TagParser;
 
     // --- 2-tuple ---
 
     #[test]
     fn test_two_first_matches() {
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("foo"), tag("bar"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("foo"),
+            TagParser::new("bar"),
+        );
         assert_eq!(parser.parse("foorest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_two_second_matches() {
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("foo"), tag("bar"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("foo"),
+            TagParser::new("bar"),
+        );
         assert_eq!(parser.parse("barrest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_two_all_fail() {
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("foo"), tag("bar"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("foo"),
+            TagParser::new("bar"),
+        );
         assert_eq!(parser.parse("baz"), Err(()));
     }
 
     #[test]
     fn test_two_first_has_priority() {
         // "fo" is a prefix of "foo", so first parser wins with "obar" remaining
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("fo"), tag("foo"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("fo"),
+            TagParser::new("foo"),
+        );
         assert_eq!(parser.parse("foobar"), Ok(("obar", ())));
     }
 
     #[test]
     fn test_two_full_input_consumed() {
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("foo"), tag("bar"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("foo"),
+            TagParser::new("bar"),
+        );
         assert_eq!(parser.parse("foo"), Ok(("", ())));
     }
 
     #[test]
     fn test_two_empty_input() {
-        let parser = AltConditionParser::<(Tag, Tag)>::new(tag("foo"), tag("bar"));
+        let parser = AltConditionParser::<(TagParser, TagParser)>::new(
+            TagParser::new("foo"),
+            TagParser::new("bar"),
+        );
         assert_eq!(parser.parse(""), Err(()));
     }
 
@@ -205,25 +223,41 @@ mod test {
 
     #[test]
     fn test_three_only_last_matches() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("crest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_three_second_matches_skips_third() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("brest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_three_all_fail() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse("x"), Err(()));
     }
 
     #[test]
     fn test_three_empty_input() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(parser.parse(""), Err(()));
     }
 
@@ -231,29 +265,45 @@ mod test {
 
     #[test]
     fn test_four_only_last_matches() {
-        let parser =
-            AltConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("drest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_four_third_matches() {
-        let parser =
-            AltConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("crest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_four_all_fail() {
-        let parser =
-            AltConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse("x"), Err(()));
     }
 
     #[test]
     fn test_four_empty_input() {
-        let parser =
-            AltConditionParser::<(Tag, Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"), tag("d"));
+        let parser = AltConditionParser::<(TagParser, TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+        );
         assert_eq!(parser.parse(""), Err(()));
     }
 
@@ -261,60 +311,96 @@ mod test {
 
     #[test]
     fn test_eight_only_last_matches() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag, Tag, Tag, Tag, Tag, Tag)>::new(
-            tag("a"),
-            tag("b"),
-            tag("c"),
-            tag("d"),
-            tag("e"),
-            tag("f"),
-            tag("g"),
-            tag("h"),
+        let parser = AltConditionParser::<(
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+        )>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+            TagParser::new("e"),
+            TagParser::new("f"),
+            TagParser::new("g"),
+            TagParser::new("h"),
         );
         assert_eq!(parser.parse("hrest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_eight_fifth_matches() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag, Tag, Tag, Tag, Tag, Tag)>::new(
-            tag("a"),
-            tag("b"),
-            tag("c"),
-            tag("d"),
-            tag("e"),
-            tag("f"),
-            tag("g"),
-            tag("h"),
+        let parser = AltConditionParser::<(
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+        )>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+            TagParser::new("e"),
+            TagParser::new("f"),
+            TagParser::new("g"),
+            TagParser::new("h"),
         );
         assert_eq!(parser.parse("erest"), Ok(("rest", ())));
     }
 
     #[test]
     fn test_eight_all_fail() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag, Tag, Tag, Tag, Tag, Tag)>::new(
-            tag("a"),
-            tag("b"),
-            tag("c"),
-            tag("d"),
-            tag("e"),
-            tag("f"),
-            tag("g"),
-            tag("h"),
+        let parser = AltConditionParser::<(
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+        )>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+            TagParser::new("e"),
+            TagParser::new("f"),
+            TagParser::new("g"),
+            TagParser::new("h"),
         );
         assert_eq!(parser.parse("x"), Err(()));
     }
 
     #[test]
     fn test_eight_empty_input() {
-        let parser = AltConditionParser::<(Tag, Tag, Tag, Tag, Tag, Tag, Tag, Tag)>::new(
-            tag("a"),
-            tag("b"),
-            tag("c"),
-            tag("d"),
-            tag("e"),
-            tag("f"),
-            tag("g"),
-            tag("h"),
+        let parser = AltConditionParser::<(
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+            TagParser,
+        )>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+            TagParser::new("d"),
+            TagParser::new("e"),
+            TagParser::new("f"),
+            TagParser::new("g"),
+            TagParser::new("h"),
         );
         assert_eq!(parser.parse(""), Err(()));
     }

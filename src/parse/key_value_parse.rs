@@ -3,7 +3,7 @@ use crate::parse::all_parse::AllConditionParser;
 use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::quoted_tag_parse::QuotedTagParser;
 use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
-use crate::parse::tag_parse::{Tag, tag};
+use crate::parse::tag_parse::TagParser;
 
 /// A combinator that extracts values from a key:value pair.
 /// For ease of implementation, a comma is always required at the end of a key-value pair;
@@ -13,10 +13,10 @@ pub struct KeyValueParser<T> {
     parser: DelimitedParser<
         AllConditionParser<(
             StripWhitespaceParser<QuotedTagParser>,
-            StripWhitespaceParser<Tag>,
+            StripWhitespaceParser<TagParser>,
         )>,
         StripWhitespaceParser<T>,
-        StripWhitespaceParser<Tag>,
+        StripWhitespaceParser<TagParser>,
     >,
 }
 
@@ -29,13 +29,13 @@ where
             parser: DelimitedParser::new(
                 AllConditionParser::<(
                     StripWhitespaceParser<QuotedTagParser>,
-                    StripWhitespaceParser<Tag>,
+                    StripWhitespaceParser<TagParser>,
                 )>::new(
                     StripWhitespaceParser::new(QuotedTagParser::new(key)),
-                    StripWhitespaceParser::new(tag(":")),
+                    StripWhitespaceParser::new(TagParser::new(":")),
                 ),
                 StripWhitespaceParser::new(value_parser),
-                StripWhitespaceParser::new(tag(",")),
+                StripWhitespaceParser::new(TagParser::new(",")),
             ),
         }
     }

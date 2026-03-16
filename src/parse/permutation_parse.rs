@@ -116,14 +116,17 @@ mod test {
     use super::*;
     use crate::parse::key_value_parse::KeyValueParser;
     use crate::parse::std_parse::U32Parser;
-    use crate::parse::tag_parse::{Tag, tag};
+    use crate::parse::tag_parse::TagParser;
     use crate::parse::unquote_parse::{Unquote, unquote};
 
     // ── PermutationParser<(A0, A1)> ──────────────────────────────────────
 
     #[test]
     fn two_parsers_direct_order() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse("ab"), Ok(("", ((), ()))));
     }
 
@@ -141,31 +144,46 @@ mod test {
 
     #[test]
     fn two_parsers_both_fail() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse("cd"), Err(()));
     }
 
     #[test]
     fn two_parsers_first_ok_second_fails() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse("ac"), Err(()));
     }
 
     #[test]
     fn two_parsers_second_ok_first_fails() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse("bc"), Err(()));
     }
 
     #[test]
     fn two_parsers_leaves_remaining() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse("abXYZ"), Ok(("XYZ", ((), ()))));
     }
 
     #[test]
     fn two_parsers_empty_input() {
-        let p = PermutationParser::<(Tag, Tag)>::new(tag("a"), tag("b"));
+        let p = PermutationParser::<(TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+        );
         assert_eq!(p.parse(""), Err(()));
     }
 
@@ -173,37 +191,61 @@ mod test {
 
     #[test]
     fn three_parsers_order_a0_a1_a2() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("abc"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn three_parsers_order_a0_a2_a1() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("acb"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn three_parsers_order_a1_a0_a2() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("bac"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn three_parsers_order_a1_a2_a0() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("bca"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn three_parsers_order_a2_a0_a1() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("cab"), Ok(("", ((), (), ()))));
     }
 
     #[test]
     fn three_parsers_order_a2_a1_a0() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("cba"), Ok(("", ((), (), ()))));
     }
 
@@ -226,13 +268,21 @@ mod test {
 
     #[test]
     fn three_parsers_all_fail() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("xyz"), Err(()));
     }
 
     #[test]
     fn three_parsers_partial_match() {
-        let p = PermutationParser::<(Tag, Tag, Tag)>::new(tag("a"), tag("b"), tag("c"));
+        let p = PermutationParser::<(TagParser, TagParser, TagParser)>::new(
+            TagParser::new("a"),
+            TagParser::new("b"),
+            TagParser::new("c"),
+        );
         assert_eq!(p.parse("ab"), Err(()));
     }
 }
