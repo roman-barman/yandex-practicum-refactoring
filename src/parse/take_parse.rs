@@ -16,7 +16,7 @@ impl<T: Parser> Parser for TakeParser<T> {
     type Dest = Vec<T::Dest>;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         let mut remaining = input;
-        let mut result = Vec::new();
+        let mut result = Vec::with_capacity(self.count);
         for _ in 0..self.count {
             let (new_remaining, new_result) = self.parser.parse(remaining)?;
             result.push(new_result);
