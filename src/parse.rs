@@ -1,7 +1,7 @@
 use crate::parsable::Parsable;
 use crate::parse::all_parse::AllConditionParser;
-use crate::parse::alt_parse::AltConditionParser;
-use crate::parse::delimited_parse::DelimitedParser;
+pub(crate) use crate::parse::alt_parse::AltConditionParser;
+pub(crate) use crate::parse::delimited_parse::DelimitedParser;
 use crate::parse::key_value_parse::KeyValueParser;
 use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
@@ -9,8 +9,8 @@ use crate::parse::permutation_parse::PermutationParser;
 use crate::parse::preceded_parse::PrecededParser;
 use crate::parse::std_parse::U32Parser;
 use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
-use crate::parse::tag_parse::TagParser;
-use crate::parse::unquote_parse::UnquoteParser;
+pub(crate) use crate::parse::tag_parse::TagParser;
+pub(crate) use crate::parse::unquote_parse::UnquoteParser;
 
 mod all_parse;
 mod alt_parse;
@@ -59,36 +59,6 @@ fn quote(input: &str) -> String {
 enum Either<Left, Right> {
     Left(Left),
     Right(Right),
-}
-
-/// Статус, которые можно парсить
-enum Status {
-    Ok,
-    Err(String),
-}
-impl Parsable for Status {
-    type Parser = AltConditionParser<(
-        MapParser<TagParser, fn(()) -> Self>,
-        MapParser<DelimitedParser<TagParser, UnquoteParser, TagParser>, fn(String) -> Self>,
-    )>;
-    fn parser() -> Self::Parser {
-        fn to_ok(_: ()) -> Status {
-            Status::Ok
-        }
-        fn to_err(error: String) -> Status {
-            Status::Err(error)
-        }
-        AltConditionParser::<(
-            MapParser<TagParser, fn(()) -> Self>,
-            MapParser<DelimitedParser<TagParser, UnquoteParser, TagParser>, fn(String) -> Self>,
-        )>::new(
-            MapParser::new(TagParser::new("Ok"), to_ok),
-            MapParser::new(
-                DelimitedParser::new(TagParser::new("Err("), UnquoteParser, TagParser::new(")")),
-                to_err,
-            ),
-        )
-    }
 }
 
 /// Пара 'сокращённое название предмета' - 'его описание'
