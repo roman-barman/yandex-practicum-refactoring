@@ -1,3 +1,4 @@
+mod announcements;
 mod asset_dsc;
 mod auth_data;
 mod bucket;
@@ -6,6 +7,7 @@ mod user_bucket;
 mod user_buckets;
 mod user_cash;
 
+pub(crate) use announcements::Announcements;
 pub(crate) use asset_dsc::AssetDsc;
 pub(crate) use auth_data::AuthData;
 pub(crate) use bucket::Bucket;

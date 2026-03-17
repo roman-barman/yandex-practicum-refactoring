@@ -28,7 +28,9 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{AssetDsc, AuthData, Bucket, UserBucket, UserBuckets, UserCash};
+use crate::entities::{
+    Announcements, AssetDsc, AuthData, Bucket, UserBucket, UserBuckets, UserCash,
+};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -59,20 +61,6 @@ fn quote(input: &str) -> String {
 enum Either<Left, Right> {
     Left(Left),
     Right(Right),
-}
-
-/// Список опубликованных бакетов
-#[derive(Debug, Clone, PartialEq)]
-pub struct Announcements(Vec<UserBuckets>);
-impl Parsable for Announcements {
-    type Parser =
-        MapParser<ListParser<<UserBuckets as Parsable>::Parser>, fn(Vec<UserBuckets>) -> Self>;
-    fn parser() -> Self::Parser {
-        fn from_vec(vec: Vec<UserBuckets>) -> Announcements {
-            Announcements(vec)
-        }
-        MapParser::new(ListParser::new(UserBuckets::parser()), from_vec)
-    }
 }
 
 // просто обёртки
