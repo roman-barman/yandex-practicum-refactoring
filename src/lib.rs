@@ -1,6 +1,8 @@
 pub mod entities;
+mod logs;
 mod parsable;
 pub mod parse;
+use crate::logs::LogKind;
 use parse::*;
 
 // подсказка: лучше использовать enum и match
