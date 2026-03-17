@@ -3,7 +3,7 @@ pub(crate) use crate::parse::all_parse::AllConditionParser;
 pub(crate) use crate::parse::alt_parse::AltConditionParser;
 pub(crate) use crate::parse::delimited_parse::DelimitedParser;
 pub(crate) use crate::parse::key_value_parse::KeyValueParser;
-use crate::parse::list_parse::ListParser;
+pub(crate) use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
 pub(crate) use crate::parse::permutation_parse::PermutationParser;
 use crate::parse::preceded_parse::PrecededParser;
@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{AssetDsc, AuthData, Bucket, UserBucket, UserCash};
+use crate::entities::{AssetDsc, AuthData, Bucket, UserBucket, UserBuckets, UserCash};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -61,61 +61,17 @@ enum Either<Left, Right> {
     Right(Right),
 }
 
-/// [Бакеты](Backet) конкретного пользователя
-#[derive(Debug, Clone, PartialEq)]
-pub struct UserBackets {
-    pub user_id: String,
-    pub backets: Vec<Bucket>,
-}
-impl Parsable for UserBackets {
-    type Parser = MapParser<
-        DelimitedParser<
-            AllConditionParser<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>,
-            )>,
-            PermutationParser<(
-                KeyValueParser<UnquoteParser>,
-                KeyValueParser<ListParser<<Bucket as Parsable>::Parser>>,
-            )>,
-            StripWhitespaceParser<TagParser>,
-        >,
-        fn((String, Vec<Bucket>)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        MapParser::new(
-            DelimitedParser::new(
-                AllConditionParser::<(
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<TagParser>,
-                )>::new(
-                    StripWhitespaceParser::new(TagParser::new("UserBackets")),
-                    StripWhitespaceParser::new(TagParser::new("{")),
-                ),
-                PermutationParser::<(
-                    KeyValueParser<UnquoteParser>,
-                    KeyValueParser<ListParser<<Bucket as Parsable>::Parser>>,
-                )>::new(
-                    KeyValueParser::new("user_id", UnquoteParser),
-                    KeyValueParser::new("backets", ListParser::new(Bucket::parser())),
-                ),
-                StripWhitespaceParser::new(TagParser::new("}")),
-            ),
-            |(user_id, backets)| UserBackets { user_id, backets },
-        )
-    }
-}
 /// Список опубликованных бакетов
 #[derive(Debug, Clone, PartialEq)]
-pub struct Announcements(Vec<UserBackets>);
+pub struct Announcements(Vec<UserBuckets>);
 impl Parsable for Announcements {
     type Parser =
-        MapParser<ListParser<<UserBackets as Parsable>::Parser>, fn(Vec<UserBackets>) -> Self>;
+        MapParser<ListParser<<UserBuckets as Parsable>::Parser>, fn(Vec<UserBuckets>) -> Self>;
     fn parser() -> Self::Parser {
-        fn from_vec(vec: Vec<UserBackets>) -> Announcements {
+        fn from_vec(vec: Vec<UserBuckets>) -> Announcements {
             Announcements(vec)
         }
-        MapParser::new(ListParser::new(UserBackets::parser()), from_vec)
+        MapParser::new(ListParser::new(UserBuckets::parser()), from_vec)
     }
 }
 
@@ -138,8 +94,8 @@ pub fn just_user_backet(input: &str) -> Result<(&str, UserBucket), ()> {
     <UserBucket as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [UserBackets]
-pub fn just_user_backets(input: &str) -> Result<(&str, UserBackets), ()> {
-    <UserBackets as Parsable>::parser().parse(input)
+pub fn just_user_backets(input: &str) -> Result<(&str, UserBuckets), ()> {
+    <UserBuckets as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [Announcements]
 pub fn just_parse_anouncements(input: &str) -> Result<(&str, Announcements), ()> {
