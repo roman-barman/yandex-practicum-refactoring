@@ -1,4 +1,4 @@
-mod entities;
+pub mod entities;
 mod parsable;
 pub mod parse;
 use parse::*;

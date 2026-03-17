@@ -7,10 +7,18 @@ mod user_bucket;
 mod user_buckets;
 mod user_cash;
 
-pub(crate) use announcements::Announcements;
-pub(crate) use asset_dsc::AssetDsc;
-pub(crate) use auth_data::AuthData;
-pub(crate) use bucket::Bucket;
-pub(crate) use user_bucket::UserBucket;
-pub(crate) use user_buckets::UserBuckets;
-pub(crate) use user_cash::UserCash;
+use crate::parsable::Parsable;
+use crate::parse::Parser;
+pub use announcements::Announcements;
+pub use auth_data::AuthData;
+pub use bucket::Bucket;
+pub use user_bucket::UserBucket;
+pub use user_buckets::UserBuckets;
+pub use user_cash::UserCash;
+
+pub fn just_parse<T>(input: &str) -> Result<(&str, T), ()>
+where
+    T: Parsable,
+{
+    T::parser().parse(input)
+}

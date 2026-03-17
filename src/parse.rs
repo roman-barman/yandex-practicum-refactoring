@@ -28,9 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{
-    Announcements, AssetDsc, AuthData, Bucket, UserBucket, UserBuckets, UserCash,
-};
+use crate::entities::{Announcements, AuthData, Bucket, UserBucket, UserCash};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -38,33 +36,6 @@ pub(crate) use take_parse::TakeParser;
 pub trait Parser {
     type Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
-}
-
-// просто обёртки
-// подсказка: почему бы не заменить на один дженерик?
-/// Обёртка для парсинга [AssetDsc]
-pub fn just_parse_asset_dsc(input: &str) -> Result<(&str, AssetDsc), ()> {
-    <AssetDsc as Parsable>::parser().parse(input)
-}
-/// Обёртка для парсинга [Backet]
-pub fn just_parse_backet(input: &str) -> Result<(&str, Bucket), ()> {
-    <Bucket as Parsable>::parser().parse(input)
-}
-/// Обёртка для парсинга [UserCash]
-pub fn just_user_cash(input: &str) -> Result<(&str, UserCash), ()> {
-    <UserCash as Parsable>::parser().parse(input)
-}
-/// Обёртка для парсинга [UserBacket]
-pub fn just_user_backet(input: &str) -> Result<(&str, UserBucket), ()> {
-    <UserBucket as Parsable>::parser().parse(input)
-}
-/// Обёртка для парсинга [UserBackets]
-pub fn just_user_backets(input: &str) -> Result<(&str, UserBuckets), ()> {
-    <UserBuckets as Parsable>::parser().parse(input)
-}
-/// Обёртка для парсинга [Announcements]
-pub fn just_parse_anouncements(input: &str) -> Result<(&str, Announcements), ()> {
-    <Announcements as Parsable>::parser().parse(input)
 }
 
 /// Все виды логов
