@@ -34,33 +34,10 @@ use crate::entities::{
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
-/// Трейт, чтобы **реализовывать** и **требовать** метод 'распарсь и покажи,
-/// что распарсить осталось'
+/// Trait to implement and require the 'parse and show what remains to be parsed' method
 pub trait Parser {
     type Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
-}
-
-/// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть
-fn quote(input: &str) -> String {
-    let mut result = String::from("\"");
-    result.extend(
-        input
-            .chars()
-            .map(|c| match c {
-                '\\' | '"' => ['\\', c].into_iter().take(2),
-                _ => [c, ' '].into_iter().take(1),
-            })
-            .flatten(),
-    );
-    result.push('"');
-    result
-}
-
-/// Конструкция 'либо-либо'
-enum Either<Left, Right> {
-    Left(Left),
-    Right(Right),
 }
 
 // просто обёртки
@@ -830,12 +807,6 @@ pub static LOG_LINE_PARSER: LogLineParser = LogLineParser {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_quote() {
-        assert_eq!(quote(r#"411"#), r#""411""#.to_string());
-        assert_eq!(quote(r#"4\11""#), r#""4\\11\"""#.to_string());
-    }
 
     #[test]
     fn test_log_kind() {
