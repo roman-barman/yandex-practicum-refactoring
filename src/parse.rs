@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{AssetDsc, AuthData, Bucket};
+use crate::entities::{AssetDsc, AuthData, Bucket, UserCash};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -60,44 +60,7 @@ enum Either<Left, Right> {
     Left(Left),
     Right(Right),
 }
-/// Фиатные деньги конкретного пользователя
-#[derive(Debug, Clone, PartialEq)]
-pub struct UserCash {
-    pub user_id: String,
-    pub count: u32,
-}
-impl Parsable for UserCash {
-    type Parser = MapParser<
-        DelimitedParser<
-            AllConditionParser<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>,
-            )>,
-            PermutationParser<(KeyValueParser<UnquoteParser>, KeyValueParser<U32Parser>)>,
-            StripWhitespaceParser<TagParser>,
-        >,
-        fn((String, u32)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        MapParser::new(
-            DelimitedParser::new(
-                AllConditionParser::<(
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<TagParser>,
-                )>::new(
-                    StripWhitespaceParser::new(TagParser::new("UserCash")),
-                    StripWhitespaceParser::new(TagParser::new("{")),
-                ),
-                PermutationParser::<(KeyValueParser<UnquoteParser>, KeyValueParser<U32Parser>)>::new(
-                    KeyValueParser::new("user_id", UnquoteParser),
-                    KeyValueParser::new("count", U32Parser),
-                ),
-                StripWhitespaceParser::new(TagParser::new("}")),
-            ),
-            |(user_id, count)| UserCash { user_id, count },
-        )
-    }
-}
+
 /// [Backet] конкретного пользователя
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBacket {
