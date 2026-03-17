@@ -8,8 +8,8 @@ use crate::parse::{
 /// [Bucket] of a specific user
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBucket {
-    pub user_id: String,
-    pub bucket: Bucket,
+    user_id: String,
+    bucket: Bucket,
 }
 impl Parsable for UserBucket {
     type Parser = MapParser<
@@ -51,6 +51,13 @@ impl Parsable for UserBucket {
 }
 
 #[cfg(test)]
+impl UserBucket {
+    pub fn new(user_id: String, bucket: Bucket) -> Self {
+        UserBucket { user_id, bucket }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::parse::Parser;
@@ -66,10 +73,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 42
-                    }
+                    bucket: Bucket::new("usd".into(), 42)
                 }
             ))
         );
@@ -86,10 +90,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 42
-                    }
+                    bucket: Bucket::new("usd".into(), 42)
                 }
             ))
         );
@@ -106,10 +107,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 1
-                    }
+                    bucket: Bucket::new("usd".into(), 1)
                 }
             ))
         );
@@ -126,10 +124,7 @@ mod tests {
                 "trailing".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 1
-                    }
+                    bucket: Bucket::new("usd".into(), 1)
                 }
             ))
         );
@@ -145,10 +140,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 1
-                    }
+                    bucket: Bucket::new("usd".into(), 1)
                 }
             ))
         );
@@ -165,10 +157,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "123".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 10
-                    }
+                    bucket: Bucket::new("usd".into(), 10)
                 }
             ))
         );
@@ -195,10 +184,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 4294967295
-                    }
+                    bucket: Bucket::new("usd".into(), 4294967295)
                 }
             ))
         );
@@ -215,10 +201,7 @@ mod tests {
                 "".into(),
                 UserBucket {
                     user_id: "alice".into(),
-                    bucket: Bucket {
-                        asset_id: "usd".into(),
-                        count: 42
-                    }
+                    bucket: Bucket::new("usd".into(), 42)
                 }
             ))
         );

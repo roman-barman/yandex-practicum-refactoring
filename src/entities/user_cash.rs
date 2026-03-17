@@ -7,8 +7,8 @@ use crate::parse::{
 /// Fiat money of a specific user
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserCash {
-    pub user_id: String,
-    pub count: u32,
+    user_id: String,
+    count: u32,
 }
 impl Parsable for UserCash {
     type Parser = MapParser<
@@ -40,6 +40,13 @@ impl Parsable for UserCash {
             ),
             |(user_id, count)| UserCash { user_id, count },
         )
+    }
+}
+
+#[cfg(test)]
+impl UserCash {
+    pub fn new(user_id: String, count: u32) -> Self {
+        UserCash { user_id, count }
     }
 }
 

@@ -859,13 +859,10 @@ mod test {
             Ok((
                 "".into(),
                 LogKind::App(AppLogKind::Journal(AppLogJournalKind::DepositCash(
-                    UserCash {
-                        user_id: "Steeve".into(),
-                        count: 10
-                    }
+                    UserCash::new("Steeve".into(), 10)
                 )))
             ))
         );
-        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBucket{user_id: "Steeve".into(), bucket: Bucket{asset_id: "bayc".into(),count:1}}))))));
+        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBucket::new("Steeve".into(), Bucket::new("bayc".into(), 1))))))));
     }
 }

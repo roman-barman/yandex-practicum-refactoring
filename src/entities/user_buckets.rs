@@ -8,8 +8,8 @@ use crate::parse::{
 /// [Bucket] of a specific user
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBuckets {
-    pub user_id: String,
-    pub buckets: Vec<Bucket>,
+    user_id: String,
+    buckets: Vec<Bucket>,
 }
 
 impl Parsable for UserBuckets {
@@ -52,6 +52,13 @@ impl Parsable for UserBuckets {
 }
 
 #[cfg(test)]
+impl UserBuckets {
+    pub fn new(user_id: String, buckets: Vec<Bucket>) -> Self {
+        UserBuckets { user_id, buckets }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::parse::Parser;
@@ -67,7 +74,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -85,8 +92,8 @@ mod tests {
                 UserBuckets {
                     user_id: "alice".into(),
                     buckets: vec![
-                        Bucket { asset_id: "usd".into(), count: 1 },
-                        Bucket { asset_id: "eur".into(), count: 2 },
+                        Bucket::new("usd".into(), 1),
+                        Bucket::new("eur".into(), 2),
                     ]
                 }
             ))
@@ -118,7 +125,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -135,7 +142,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -152,7 +159,7 @@ mod tests {
                 "trailing".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -169,10 +176,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "".into(),
-                    buckets: vec![Bucket {
-                        asset_id: "usd".into(),
-                        count: 1
-                    }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -189,10 +193,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "123".into(),
-                    buckets: vec![Bucket {
-                        asset_id: "usd".into(),
-                        count: 1
-                    }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -209,7 +210,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
+                    buckets: vec![Bucket::new("usd".into(), 1)]
                 }
             ))
         );
@@ -227,8 +228,8 @@ mod tests {
                 UserBuckets {
                     user_id: "alice".into(),
                     buckets: vec![
-                        Bucket { asset_id: "usd".into(), count: 1 },
-                        Bucket { asset_id: "usd".into(), count: 2 },
+                        Bucket::new("usd".into(), 1),
+                        Bucket::new("usd".into(), 2),
                     ]
                 }
             ))
@@ -246,7 +247,7 @@ mod tests {
                 "".into(),
                 UserBuckets {
                     user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 4294967295 }]
+                    buckets: vec![Bucket::new("usd".into(), 4294967295)]
                 }
             ))
         );

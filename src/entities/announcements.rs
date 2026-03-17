@@ -31,10 +31,10 @@ mod tests {
             ),
             Ok((
                 "".into(),
-                Announcements(vec![UserBuckets {
-                    user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
-                }])
+                Announcements(vec![UserBuckets::new(
+                    "alice".into(),
+                    vec![Bucket::new("usd".into(), 1)]
+                )])
             ))
         );
     }
@@ -49,14 +49,14 @@ mod tests {
             Ok((
                 "".into(),
                 Announcements(vec![
-                    UserBuckets {
-                        user_id: "alice".into(),
-                        buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
-                    },
-                    UserBuckets {
-                        user_id: "bob".into(),
-                        buckets: vec![Bucket { asset_id: "eur".into(), count: 2 }]
-                    },
+                    UserBuckets::new(
+                        "alice".into(),
+                        vec![Bucket::new("usd".into(), 1)]
+                    ),
+                    UserBuckets::new(
+                        "bob".into(),
+                        vec![Bucket::new("eur".into(), 2)]
+                    ),
                 ])
             ))
         );
@@ -79,13 +79,13 @@ mod tests {
             ),
             Ok((
                 "".into(),
-                Announcements(vec![UserBuckets {
-                    user_id: "alice".into(),
-                    buckets: vec![
-                        Bucket { asset_id: "usd".into(), count: 1 },
-                        Bucket { asset_id: "eur".into(), count: 2 },
+                Announcements(vec![UserBuckets::new(
+                    "alice".into(),
+                    vec![
+                        Bucket::new("usd".into(), 1),
+                        Bucket::new("eur".into(), 2),
                     ]
-                }])
+                )])
             ))
         );
     }
@@ -97,10 +97,7 @@ mod tests {
                 .parse(r#"[UserBackets{"user_id":"alice","backets":[],},]"#.into()),
             Ok((
                 "".into(),
-                Announcements(vec![UserBuckets {
-                    user_id: "alice".into(),
-                    buckets: vec![]
-                }])
+                Announcements(vec![UserBuckets::new("alice".into(), vec![])])
             ))
         );
     }
@@ -114,10 +111,10 @@ mod tests {
             ),
             Ok((
                 "trailing".into(),
-                Announcements(vec![UserBuckets {
-                    user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
-                }])
+                Announcements(vec![UserBuckets::new(
+                    "alice".into(),
+                    vec![Bucket::new("usd".into(), 1)]
+                )])
             ))
         );
     }
@@ -131,10 +128,10 @@ mod tests {
             ),
             Ok((
                 "".into(),
-                Announcements(vec![UserBuckets {
-                    user_id: "alice".into(),
-                    buckets: vec![Bucket { asset_id: "usd".into(), count: 1 }]
-                }])
+                Announcements(vec![UserBuckets::new(
+                    "alice".into(),
+                    vec![Bucket::new("usd".into(), 1)]
+                )])
             ))
         );
     }

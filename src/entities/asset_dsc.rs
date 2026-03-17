@@ -8,8 +8,8 @@ use crate::parse::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssetDsc {
     // `dsc` aka `description`
-    pub id: String,
-    pub dsc: String,
+    id: String,
+    dsc: String,
 }
 impl Parsable for AssetDsc {
     type Parser = MapParser<

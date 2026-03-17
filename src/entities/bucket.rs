@@ -7,8 +7,8 @@ use crate::parse::{
 /// Information about an item in some quantity
 #[derive(Debug, Clone, PartialEq)]
 pub struct Bucket {
-    pub asset_id: String,
-    pub count: u32,
+    asset_id: String,
+    count: u32,
 }
 impl Parsable for Bucket {
     type Parser = MapParser<
@@ -40,6 +40,13 @@ impl Parsable for Bucket {
             ),
             |(asset_id, count)| Bucket { asset_id, count },
         )
+    }
+}
+
+#[cfg(test)]
+impl Bucket {
+    pub fn new(asset_id: String, count: u32) -> Self {
+        Bucket { asset_id, count }
     }
 }
 
