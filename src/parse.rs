@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{AssetDsc, AuthData, Bucket, UserCash};
+use crate::entities::{AssetDsc, AuthData, Bucket, UserBucket, UserCash};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -61,50 +61,6 @@ enum Either<Left, Right> {
     Right(Right),
 }
 
-/// [Backet] конкретного пользователя
-#[derive(Debug, Clone, PartialEq)]
-pub struct UserBacket {
-    pub user_id: String,
-    pub backet: Bucket,
-}
-impl Parsable for UserBacket {
-    type Parser = MapParser<
-        DelimitedParser<
-            AllConditionParser<(
-                StripWhitespaceParser<TagParser>,
-                StripWhitespaceParser<TagParser>,
-            )>,
-            PermutationParser<(
-                KeyValueParser<UnquoteParser>,
-                KeyValueParser<<Bucket as Parsable>::Parser>,
-            )>,
-            StripWhitespaceParser<TagParser>,
-        >,
-        fn((String, Bucket)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        MapParser::new(
-            DelimitedParser::new(
-                AllConditionParser::<(
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<TagParser>,
-                )>::new(
-                    StripWhitespaceParser::new(TagParser::new("UserBacket")),
-                    StripWhitespaceParser::new(TagParser::new("{")),
-                ),
-                PermutationParser::<(
-                    KeyValueParser<UnquoteParser>,
-                    KeyValueParser<<Bucket as Parsable>::Parser>,
-                )>::new(
-                    KeyValueParser::new("user_id", UnquoteParser),
-                    KeyValueParser::new("backet", Bucket::parser()),
-                ),
-                StripWhitespaceParser::new(TagParser::new("}")),
-            ),
-            |(user_id, backet)| UserBacket { user_id, backet },
-        )
-    }
-}
 /// [Бакеты](Backet) конкретного пользователя
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBackets {
@@ -178,8 +134,8 @@ pub fn just_user_cash(input: &str) -> Result<(&str, UserCash), ()> {
     <UserCash as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [UserBacket]
-pub fn just_user_backet(input: &str) -> Result<(&str, UserBacket), ()> {
-    <UserBacket as Parsable>::parser().parse(input)
+pub fn just_user_backet(input: &str) -> Result<(&str, UserBucket), ()> {
+    <UserBucket as Parsable>::parser().parse(input)
 }
 /// Обёртка для парсинга [UserBackets]
 pub fn just_user_backets(input: &str) -> Result<(&str, UserBackets), ()> {
@@ -257,8 +213,8 @@ pub enum AppLogJournalKind {
     },
     DepositCash(UserCash),
     WithdrawCash(UserCash),
-    BuyAsset(UserBacket),
-    SellAsset(UserBacket),
+    BuyAsset(UserBucket),
+    SellAsset(UserBucket),
 }
 impl Parsable for SystemLogErrorKind {
     type Parser = PrecededParser<
@@ -632,12 +588,12 @@ impl Parsable for AppLogJournalKind {
                 fn(UserCash) -> AppLogJournalKind,
             >,
             MapParser<
-                PrecededParser<StripWhitespaceParser<TagParser>, <UserBacket as Parsable>::Parser>,
-                fn(UserBacket) -> AppLogJournalKind,
+                PrecededParser<StripWhitespaceParser<TagParser>, <UserBucket as Parsable>::Parser>,
+                fn(UserBucket) -> AppLogJournalKind,
             >,
             MapParser<
-                PrecededParser<StripWhitespaceParser<TagParser>, <UserBacket as Parsable>::Parser>,
-                fn(UserBacket) -> AppLogJournalKind,
+                PrecededParser<StripWhitespaceParser<TagParser>, <UserBucket as Parsable>::Parser>,
+                fn(UserBucket) -> AppLogJournalKind,
             >,
         )>,
     >;
@@ -712,16 +668,16 @@ impl Parsable for AppLogJournalKind {
                 MapParser<
                     PrecededParser<
                         StripWhitespaceParser<TagParser>,
-                        <UserBacket as Parsable>::Parser,
+                        <UserBucket as Parsable>::Parser,
                     >,
-                    fn(UserBacket) -> AppLogJournalKind,
+                    fn(UserBucket) -> AppLogJournalKind,
                 >,
                 MapParser<
                     PrecededParser<
                         StripWhitespaceParser<TagParser>,
-                        <UserBacket as Parsable>::Parser,
+                        <UserBucket as Parsable>::Parser,
                     >,
-                    fn(UserBacket) -> AppLogJournalKind,
+                    fn(UserBucket) -> AppLogJournalKind,
                 >,
             )>::new(
                 MapParser::new(
@@ -812,14 +768,14 @@ impl Parsable for AppLogJournalKind {
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("BuyAsset")),
-                        UserBacket::parser(),
+                        UserBucket::parser(),
                     ),
                     |user_backet| AppLogJournalKind::BuyAsset(user_backet),
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("SellAsset")),
-                        UserBacket::parser(),
+                        UserBucket::parser(),
                     ),
                     |user_backet| AppLogJournalKind::SellAsset(user_backet),
                 ),
@@ -995,6 +951,6 @@ mod test {
                 )))
             ))
         );
-        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBacket{user_id: "Steeve".into(), backet: Bucket{asset_id: "bayc".into(),count:1}}))))));
+        assert_eq!(LogKind::parser().parse(r#"App::Journal BuyAsset UserBacket{"user_id": "Steeve", "backet": Backet{"asset_id":"bayc","count":1,},}"#.into()), Ok(("".into(), LogKind::App(AppLogKind::Journal(AppLogJournalKind::BuyAsset(UserBucket{user_id: "Steeve".into(), bucket: Bucket{asset_id: "bayc".into(),count:1}}))))));
     }
 }
