@@ -39,12 +39,6 @@ pub trait Parser {
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
 }
 
-/// Trace [системы](SystemLogKind)
-#[derive(Debug, Clone, PartialEq)]
-pub enum SystemLogTraceKind {
-    SendRequest(String),
-    GetResponse(String),
-}
 /// Error [системы](SystemLogKind)
 #[derive(Debug, Clone, PartialEq)]
 pub enum SystemLogErrorKind {
@@ -149,63 +143,6 @@ impl Parsable for SystemLogErrorKind {
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
                     |error| SystemLogErrorKind::AccessDenied(error),
-                ),
-            ),
-        )
-    }
-}
-impl Parsable for SystemLogTraceKind {
-    type Parser = PrecededParser<
-        TagParser,
-        AltConditionParser<(
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> SystemLogTraceKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> SystemLogTraceKind,
-            >,
-        )>,
-    >;
-    fn parser() -> Self::Parser {
-        PrecededParser::new(
-            TagParser::new("Trace"),
-            AltConditionParser::<(
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> SystemLogTraceKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> SystemLogTraceKind,
-                >,
-            )>::new(
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("SendRequest")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |request| SystemLogTraceKind::SendRequest(request),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("GetResponse")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |response| SystemLogTraceKind::GetResponse(response),
                 ),
             ),
         )
