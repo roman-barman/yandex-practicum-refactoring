@@ -6,7 +6,7 @@ pub(crate) use crate::parse::key_value_parse::KeyValueParser;
 pub(crate) use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
 pub(crate) use crate::parse::permutation_parse::PermutationParser;
-use crate::parse::preceded_parse::PrecededParser;
+pub(crate) use crate::parse::preceded_parse::PrecededParser;
 pub(crate) use crate::parse::std_parse::U32Parser;
 pub(crate) use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
 pub(crate) use crate::parse::tag_parse::TagParser;
@@ -39,12 +39,6 @@ pub trait Parser {
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
 }
 
-/// Все виды [системных](LogKind) логов
-#[derive(Debug, Clone, PartialEq)]
-pub enum SystemLogKind {
-    Error(SystemLogErrorKind),
-    Trace(SystemLogTraceKind),
-}
 /// Trace [системы](SystemLogKind)
 #[derive(Debug, Clone, PartialEq)]
 pub enum SystemLogTraceKind {
@@ -217,45 +211,7 @@ impl Parsable for SystemLogTraceKind {
         )
     }
 }
-impl Parsable for SystemLogKind {
-    type Parser = StripWhitespaceParser<
-        PrecededParser<
-            TagParser,
-            AltConditionParser<(
-                MapParser<
-                    <SystemLogTraceKind as Parsable>::Parser,
-                    fn(SystemLogTraceKind) -> SystemLogKind,
-                >,
-                MapParser<
-                    <SystemLogErrorKind as Parsable>::Parser,
-                    fn(SystemLogErrorKind) -> SystemLogKind,
-                >,
-            )>,
-        >,
-    >;
-    fn parser() -> Self::Parser {
-        StripWhitespaceParser::new(PrecededParser::new(
-            TagParser::new("System::"),
-            AltConditionParser::<(
-                MapParser<
-                    <SystemLogTraceKind as Parsable>::Parser,
-                    fn(SystemLogTraceKind) -> SystemLogKind,
-                >,
-                MapParser<
-                    <SystemLogErrorKind as Parsable>::Parser,
-                    fn(SystemLogErrorKind) -> SystemLogKind,
-                >,
-            )>::new(
-                MapParser::new(SystemLogTraceKind::parser(), |trace| {
-                    SystemLogKind::Trace(trace)
-                }),
-                MapParser::new(SystemLogErrorKind::parser(), |error| {
-                    SystemLogKind::Error(error)
-                }),
-            ),
-        ))
-    }
-}
+
 impl Parsable for AppLogErrorKind {
     type Parser = PrecededParser<
         TagParser,

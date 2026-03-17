@@ -1,7 +1,6 @@
+use crate::logs::system_log_kind::SystemLogKind;
 use crate::parsable::Parsable;
-use crate::parse::{
-    AltConditionParser, AppLogKind, MapParser, StripWhitespaceParser, SystemLogKind,
-};
+use crate::parse::{AltConditionParser, AppLogKind, MapParser, StripWhitespaceParser};
 
 /// All types of logs
 #[derive(Debug, Clone, PartialEq)]
