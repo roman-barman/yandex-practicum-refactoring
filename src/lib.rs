@@ -2,8 +2,7 @@ pub mod entities;
 mod logs;
 mod parsable;
 pub mod parse;
-use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, LogLine, SystemLogKind};
-use parse::*;
+use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, LogLine, LogLineParser, SystemLogKind};
 
 // подсказка: лучше использовать enum и match
 /// Режим чтения из логов всего подряд
@@ -39,6 +38,7 @@ struct LogIterator {
         fn(&Result<String, std::io::Error>) -> bool,
     >,
     reader_rc: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
+    log_lines_parser: LogLineParser,
 }
 impl LogIterator {
     fn new(r: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>) -> Self {
@@ -63,6 +63,7 @@ impl LogIterator {
                         .unwrap_or(false)
                 }),
             reader_rc: r,
+            log_lines_parser: LogLineParser::new(),
         }
     }
 }
@@ -70,7 +71,7 @@ impl Iterator for LogIterator {
     type Item = LogLine;
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
-        let (remaining, result) = LOG_LINE_PARSER.parse(line.trim()).ok()?;
+        let (remaining, result) = self.log_lines_parser.parse(line.trim()).ok()?;
         remaining.trim().is_empty().then_some(result)
     }
 }

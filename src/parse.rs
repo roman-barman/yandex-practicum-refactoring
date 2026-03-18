@@ -1,5 +1,3 @@
-use crate::logs::LogLine;
-use crate::parsable::Parsable;
 pub(crate) use crate::parse::all_parse::AllConditionParser;
 pub(crate) use crate::parse::alt_parse::AltConditionParser;
 pub(crate) use crate::parse::delimited_parse::DelimitedParser;
@@ -34,39 +32,4 @@ mod unquote_parse;
 pub trait Parser {
     type Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
-}
-
-/// Парсер строки логов
-pub struct LogLineParser {
-    parser: std::sync::OnceLock<<LogLine as Parsable>::Parser>,
-}
-impl LogLineParser {
-    pub fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, LogLine), ()> {
-        self.parser
-            .get_or_init(|| <LogLine as Parsable>::parser())
-            .parse(input)
-    }
-}
-// подсказка: singleton, без которого можно обойтись
-// парсеры не страшно вытащить в pub
-/// Единожды собранный парсер логов
-pub static LOG_LINE_PARSER: LogLineParser = LogLineParser {
-    parser: std::sync::OnceLock::new(),
-};
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_log_kind() {
-        assert_eq!(
-            PrecededParser::new(
-                StripWhitespaceParser::new(TagParser::new("NetworkError")),
-                StripWhitespaceParser::new(UnquoteParser)
-            )
-            .parse(r#"NetworkError "url unknown""#.into()),
-            Ok(("".into(), "url unknown".into()))
-        );
-    }
 }
