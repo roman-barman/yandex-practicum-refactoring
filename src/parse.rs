@@ -29,7 +29,7 @@ mod take_parse;
 mod unquote_parse;
 
 use crate::entities::{Announcements, AuthData, UserBucket, UserCash};
-use crate::logs::LogKind;
+use crate::logs::{AppLogErrorKind, LogKind};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -45,12 +45,6 @@ pub enum AppLogKind {
     Error(AppLogErrorKind),
     Trace(AppLogTraceKind),
     Journal(AppLogJournalKind),
-}
-/// Error [приложения](AppLogKind)
-#[derive(Debug, Clone, PartialEq)]
-pub enum AppLogErrorKind {
-    LackOf(String),
-    SystemError(String),
 }
 // подсказка: а поля не слишком много места на стэке занимают?
 /// Trace [приложения](AppLogKind)
@@ -84,63 +78,6 @@ pub enum AppLogJournalKind {
     WithdrawCash(UserCash),
     BuyAsset(UserBucket),
     SellAsset(UserBucket),
-}
-impl Parsable for AppLogErrorKind {
-    type Parser = PrecededParser<
-        TagParser,
-        AltConditionParser<(
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> AppLogErrorKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> AppLogErrorKind,
-            >,
-        )>,
-    >;
-    fn parser() -> Self::Parser {
-        PrecededParser::new(
-            TagParser::new("Error"),
-            AltConditionParser::<(
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> AppLogErrorKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> AppLogErrorKind,
-                >,
-            )>::new(
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("LackOf")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |error| AppLogErrorKind::LackOf(error),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("SystemError")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |error| AppLogErrorKind::SystemError(error),
-                ),
-            ),
-        )
-    }
 }
 impl Parsable for AppLogTraceKind {
     type Parser = PrecededParser<
