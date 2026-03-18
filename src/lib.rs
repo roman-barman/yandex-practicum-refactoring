@@ -2,7 +2,7 @@ pub mod entities;
 mod logs;
 mod parsable;
 pub mod parse;
-use crate::logs::{AppLogJournalKind, LogKind, SystemLogKind};
+use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, SystemLogKind};
 use parse::*;
 
 // подсказка: лучше использовать enum и match

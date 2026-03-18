@@ -28,7 +28,7 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::logs::{AppLogErrorKind, AppLogJournalKind, AppLogTraceKind, LogKind};
+use crate::logs::LogKind;
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -38,47 +38,6 @@ pub trait Parser {
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
 }
 
-/// Все виды [логов приложения](LogKind) логов
-#[derive(Debug, Clone, PartialEq)]
-pub enum AppLogKind {
-    Error(AppLogErrorKind),
-    Trace(AppLogTraceKind),
-    Journal(AppLogJournalKind),
-}
-impl Parsable for AppLogKind {
-    type Parser = StripWhitespaceParser<
-        PrecededParser<
-            TagParser,
-            AltConditionParser<(
-                MapParser<<AppLogErrorKind as Parsable>::Parser, fn(AppLogErrorKind) -> AppLogKind>,
-                MapParser<<AppLogTraceKind as Parsable>::Parser, fn(AppLogTraceKind) -> AppLogKind>,
-                MapParser<
-                    <AppLogJournalKind as Parsable>::Parser,
-                    fn(AppLogJournalKind) -> AppLogKind,
-                >,
-            )>,
-        >,
-    >;
-    fn parser() -> Self::Parser {
-        StripWhitespaceParser::new(PrecededParser::new(
-            TagParser::new("App::"),
-            AltConditionParser::<(
-                MapParser<<AppLogErrorKind as Parsable>::Parser, fn(AppLogErrorKind) -> AppLogKind>,
-                MapParser<<AppLogTraceKind as Parsable>::Parser, fn(AppLogTraceKind) -> AppLogKind>,
-                MapParser<
-                    <AppLogJournalKind as Parsable>::Parser,
-                    fn(AppLogJournalKind) -> AppLogKind,
-                >,
-            )>::new(
-                MapParser::new(AppLogErrorKind::parser(), |error| AppLogKind::Error(error)),
-                MapParser::new(AppLogTraceKind::parser(), |trace| AppLogKind::Trace(trace)),
-                MapParser::new(AppLogJournalKind::parser(), |journal| {
-                    AppLogKind::Journal(journal)
-                }),
-            ),
-        ))
-    }
-}
 /// Строка логов, [лог](AppLogKind) с `request_id`
 #[derive(Debug, Clone, PartialEq)]
 pub struct LogLine {
