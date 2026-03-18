@@ -39,12 +39,6 @@ pub trait Parser {
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
 }
 
-/// Error [системы](SystemLogKind)
-#[derive(Debug, Clone, PartialEq)]
-pub enum SystemLogErrorKind {
-    NetworkError(String),
-    AccessDenied(String),
-}
 /// Все виды [логов приложения](LogKind) логов
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppLogKind {
@@ -91,64 +85,6 @@ pub enum AppLogJournalKind {
     BuyAsset(UserBucket),
     SellAsset(UserBucket),
 }
-impl Parsable for SystemLogErrorKind {
-    type Parser = PrecededParser<
-        TagParser,
-        AltConditionParser<(
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> SystemLogErrorKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> SystemLogErrorKind,
-            >,
-        )>,
-    >;
-    fn parser() -> Self::Parser {
-        PrecededParser::new(
-            TagParser::new("Error"),
-            AltConditionParser::<(
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> SystemLogErrorKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> SystemLogErrorKind,
-                >,
-            )>::new(
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("NetworkError")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |error| SystemLogErrorKind::NetworkError(error),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("AccessDenied")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |error| SystemLogErrorKind::AccessDenied(error),
-                ),
-            ),
-        )
-    }
-}
-
 impl Parsable for AppLogErrorKind {
     type Parser = PrecededParser<
         TagParser,

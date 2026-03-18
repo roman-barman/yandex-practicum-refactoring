@@ -32,7 +32,8 @@ mod test {
     use super::*;
     use crate::entities::{AuthData, Bucket, UserBucket, UserCash};
     use crate::logs::LogKind;
-    use crate::parse::{AppLogJournalKind, AppLogTraceKind, Parser, SystemLogErrorKind};
+    use crate::logs::system_log_error_kind::SystemLogErrorKind;
+    use crate::parse::{AppLogJournalKind, AppLogTraceKind, Parser};
 
     #[test]
     fn test_log_kind() {

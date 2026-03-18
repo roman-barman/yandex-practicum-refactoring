@@ -1,4 +1,5 @@
 mod log_kind;
+mod system_log_error_kind;
 mod system_log_kind;
 mod system_log_trace_kind;
 

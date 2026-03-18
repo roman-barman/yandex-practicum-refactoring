@@ -1,8 +1,8 @@
+use crate::logs::system_log_error_kind::SystemLogErrorKind;
 use crate::logs::system_log_trace_kind::SystemLogTraceKind;
 use crate::parsable::Parsable;
 use crate::parse::{
-    AltConditionParser, MapParser, PrecededParser, StripWhitespaceParser, SystemLogErrorKind,
-    TagParser,
+    AltConditionParser, MapParser, PrecededParser, StripWhitespaceParser, TagParser,
 };
 
 /// All types of [system](LogKind) logs
@@ -55,7 +55,7 @@ impl Parsable for SystemLogKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parse::{Parser, SystemLogErrorKind};
+    use crate::parse::Parser;
 
     #[test]
     fn test_trace_send_request() {
