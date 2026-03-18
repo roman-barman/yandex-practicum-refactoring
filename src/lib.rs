@@ -4,7 +4,7 @@ mod parsable;
 pub mod parse;
 
 use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, LogLine, LogLineParser, SystemLogKind};
-use std::io::BufRead;
+use std::io::{BufRead, Read};
 
 /// Read-all-from-logs mode
 pub enum ReadMode {
@@ -13,34 +13,19 @@ pub enum ReadMode {
     Exchanges,
 }
 
-/// A wrapper without which the requirement is not met `std::io::BufReader<T: std::io::Read>`
-#[derive(Debug)]
-struct RefMutWrapper(Box<dyn MyReader>);
-impl std::io::Read for RefMutWrapper {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        self.0.read(buf)
-    }
-}
-
-/// Для `Box<dyn много трейтов, помимо auto-трейтов>`, (`rustc E0225`)
-/// `only auto traits can be used as additional traits in a trait object`
-/// `consider creating a new trait with all of these as supertraits and using that trait here instead`
-pub trait MyReader: std::io::Read + std::fmt::Debug + 'static {}
-impl<T: std::io::Read + std::fmt::Debug + 'static> MyReader for T {}
-// подсказка: вместо trait-объекта можно дженерик
 /// Итератор, на выходе которого - строки распарсенной структуры данных
 #[derive(Debug)]
-struct LogIterator {
+struct LogIterator<T: Read> {
     lines: std::iter::Filter<
-        std::io::Lines<std::io::BufReader<RefMutWrapper>>,
+        std::io::Lines<std::io::BufReader<T>>,
         fn(&Result<String, std::io::Error>) -> bool,
     >,
     log_lines_parser: LogLineParser,
 }
-impl LogIterator {
-    fn new(r: Box<dyn MyReader>) -> Self {
+impl<T: Read> LogIterator<T> {
+    fn new(r: T) -> Self {
         Self {
-            lines: std::io::BufReader::with_capacity(4096, RefMutWrapper(r))
+            lines: std::io::BufReader::with_capacity(4096, r)
                 .lines()
                 .filter(|line_res| {
                     !line_res
@@ -53,7 +38,7 @@ impl LogIterator {
         }
     }
 }
-impl Iterator for LogIterator {
+impl<T: Read> Iterator for LogIterator<T> {
     type Item = LogLine;
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
@@ -63,7 +48,7 @@ impl Iterator for LogIterator {
 }
 
 /// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи
-pub fn read_log(input: Box<dyn MyReader>, mode: ReadMode, request_ids: Vec<u32>) -> Vec<LogLine> {
+pub fn read_log<T: Read>(input: T, mode: ReadMode, request_ids: Vec<u32>) -> Vec<LogLine> {
     let logs = LogIterator::new(input);
     let mut collected = Vec::new();
     // подсказка: можно обойтись итераторами
@@ -102,6 +87,7 @@ pub fn read_log(input: Box<dyn MyReader>, mode: ReadMode, request_ids: Vec<u32>)
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::io::Cursor;
 
     const SOURCE1: &'static str = r#"System::Error NetworkError "url unknown" requestid=1"#;
 
@@ -171,10 +157,10 @@ App::Journal BuyAsset UserBacket{"user_id":"Alice","backet":Backet{"asset_id":"m
 
     #[test]
     fn test_all() {
-        let box1: Box<dyn MyReader> = Box::new(SOURCE1.as_bytes());
-        assert_eq!(read_log(box1, ReadMode::All, vec![]).len(), 1);
-        let box2: Box<dyn MyReader> = Box::new(SOURCE.as_bytes());
-        let all_parsed = read_log(box2, ReadMode::All, vec![]);
+        let reader1 = Cursor::new(SOURCE1.as_bytes());
+        assert_eq!(read_log(reader1, ReadMode::All, vec![]).len(), 1);
+        let reader2 = Cursor::new(SOURCE.as_bytes());
+        let all_parsed = read_log(reader2, ReadMode::All, vec![]);
         println!("all parsed:");
         all_parsed
             .iter()
