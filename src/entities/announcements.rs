@@ -17,6 +17,13 @@ impl Parsable for Announcements {
 }
 
 #[cfg(test)]
+impl Announcements {
+    pub fn new(buckets: Vec<UserBuckets>) -> Self {
+        Announcements(buckets)
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::entities::Bucket;

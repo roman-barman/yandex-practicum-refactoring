@@ -28,8 +28,8 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::entities::{Announcements, AuthData, UserBucket, UserCash};
-use crate::logs::{AppLogErrorKind, LogKind};
+use crate::entities::{UserBucket, UserCash};
+use crate::logs::{AppLogErrorKind, AppLogTraceKind, LogKind};
 pub(crate) use std_parse::*;
 pub(crate) use take_parse::TakeParser;
 
@@ -46,15 +46,7 @@ pub enum AppLogKind {
     Trace(AppLogTraceKind),
     Journal(AppLogJournalKind),
 }
-// подсказка: а поля не слишком много места на стэке занимают?
-/// Trace [приложения](AppLogKind)
-#[derive(Debug, Clone, PartialEq)]
-pub enum AppLogTraceKind {
-    Connect(AuthData),
-    SendRequest(String),
-    Check(Announcements),
-    GetResponse(String),
-}
+
 /// Журнал [приложения](AppLogKind), самые высокоуровневые события
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppLogJournalKind {
@@ -78,105 +70,6 @@ pub enum AppLogJournalKind {
     WithdrawCash(UserCash),
     BuyAsset(UserBucket),
     SellAsset(UserBucket),
-}
-impl Parsable for AppLogTraceKind {
-    type Parser = PrecededParser<
-        TagParser,
-        AltConditionParser<(
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<<AuthData as Parsable>::Parser>,
-                >,
-                fn(AuthData) -> AppLogTraceKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> AppLogTraceKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<<Announcements as Parsable>::Parser>,
-                >,
-                fn(Announcements) -> AppLogTraceKind,
-            >,
-            MapParser<
-                PrecededParser<
-                    StripWhitespaceParser<TagParser>,
-                    StripWhitespaceParser<UnquoteParser>,
-                >,
-                fn(String) -> AppLogTraceKind,
-            >,
-        )>,
-    >;
-    fn parser() -> Self::Parser {
-        PrecededParser::new(
-            TagParser::new("Trace"),
-            AltConditionParser::<(
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<<AuthData as Parsable>::Parser>,
-                    >,
-                    fn(AuthData) -> AppLogTraceKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> AppLogTraceKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<<Announcements as Parsable>::Parser>,
-                    >,
-                    fn(Announcements) -> AppLogTraceKind,
-                >,
-                MapParser<
-                    PrecededParser<
-                        StripWhitespaceParser<TagParser>,
-                        StripWhitespaceParser<UnquoteParser>,
-                    >,
-                    fn(String) -> AppLogTraceKind,
-                >,
-            )>::new(
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("Connect")),
-                        StripWhitespaceParser::new(AuthData::parser()),
-                    ),
-                    |authdata| AppLogTraceKind::Connect(authdata),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("SendRequest")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |trace| AppLogTraceKind::SendRequest(trace),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("Check")),
-                        StripWhitespaceParser::new(Announcements::parser()),
-                    ),
-                    |announcements| AppLogTraceKind::Check(announcements),
-                ),
-                MapParser::new(
-                    PrecededParser::new(
-                        StripWhitespaceParser::new(TagParser::new("GetResponse")),
-                        StripWhitespaceParser::new(UnquoteParser),
-                    ),
-                    |trace| AppLogTraceKind::GetResponse(trace),
-                ),
-            ),
-        )
-    }
 }
 impl Parsable for AppLogJournalKind {
     type Parser = PrecededParser<
