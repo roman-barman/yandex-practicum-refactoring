@@ -2,7 +2,7 @@ pub mod entities;
 mod logs;
 mod parsable;
 pub mod parse;
-use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, SystemLogKind};
+use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, LogLine, SystemLogKind};
 use parse::*;
 
 // подсказка: лучше использовать enum и match
@@ -67,7 +67,7 @@ impl LogIterator {
     }
 }
 impl Iterator for LogIterator {
-    type Item = parse::LogLine;
+    type Item = LogLine;
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
         let (remaining, result) = LOG_LINE_PARSER.parse(line.trim()).ok()?;

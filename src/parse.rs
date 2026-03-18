@@ -1,3 +1,4 @@
+use crate::logs::LogLine;
 use crate::parsable::Parsable;
 pub(crate) use crate::parse::all_parse::AllConditionParser;
 pub(crate) use crate::parse::alt_parse::AltConditionParser;
@@ -7,10 +8,11 @@ pub(crate) use crate::parse::list_parse::ListParser;
 pub(crate) use crate::parse::map_parse::MapParser;
 pub(crate) use crate::parse::permutation_parse::PermutationParser;
 pub(crate) use crate::parse::preceded_parse::PrecededParser;
-pub(crate) use crate::parse::std_parse::U32Parser;
 pub(crate) use crate::parse::strip_whitespace_parse::StripWhitespaceParser;
 pub(crate) use crate::parse::tag_parse::TagParser;
 pub(crate) use crate::parse::unquote_parse::UnquoteParser;
+pub(crate) use std_parse::*;
+pub(crate) use take_parse::TakeParser;
 
 mod all_parse;
 mod alt_parse;
@@ -28,45 +30,10 @@ mod tag_parse;
 mod take_parse;
 mod unquote_parse;
 
-use crate::logs::LogKind;
-pub(crate) use std_parse::*;
-pub(crate) use take_parse::TakeParser;
-
 /// Trait to implement and require the 'parse and show what remains to be parsed' method
 pub trait Parser {
     type Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()>;
-}
-
-/// Строка логов, [лог](AppLogKind) с `request_id`
-#[derive(Debug, Clone, PartialEq)]
-pub struct LogLine {
-    pub kind: LogKind,
-    pub request_id: u32,
-}
-impl Parsable for LogLine {
-    type Parser = MapParser<
-        AllConditionParser<(
-            <LogKind as Parsable>::Parser,
-            StripWhitespaceParser<PrecededParser<TagParser, U32Parser>>,
-        )>,
-        fn((LogKind, u32)) -> Self,
-    >;
-    fn parser() -> Self::Parser {
-        MapParser::new(
-            AllConditionParser::<(
-                <LogKind as Parsable>::Parser,
-                StripWhitespaceParser<PrecededParser<TagParser, U32Parser>>,
-            )>::new(
-                LogKind::parser(),
-                StripWhitespaceParser::new(PrecededParser::new(
-                    TagParser::new("requestid="),
-                    U32Parser,
-                )),
-            ),
-            |(kind, request_id)| LogLine { kind, request_id },
-        )
-    }
 }
 
 /// Парсер строки логов
