@@ -13,7 +13,7 @@ pub enum ReadMode {
     Exchanges,
 }
 
-/// Итератор, на выходе которого - строки распарсенной структуры данных
+/// An iterator whose output is the rows of the parsed data structure
 #[derive(Debug)]
 struct LogIterator<T: Read> {
     lines: std::iter::Filter<
@@ -47,41 +47,34 @@ impl<T: Read> Iterator for LogIterator<T> {
     }
 }
 
-/// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи
+/// Receives a stream of bytes and outputs filtered and parsed logs.
 pub fn read_log<T: Read>(input: T, mode: ReadMode, request_ids: Vec<u32>) -> Vec<LogLine> {
-    let logs = LogIterator::new(input);
-    let mut collected = Vec::new();
-    // подсказка: можно обойтись итераторами
-    for log in logs {
-        if request_ids.is_empty() || {
-            let mut request_id_found = false;
-            for request_id in &request_ids {
-                if *request_id == log.request_id {
-                    request_id_found = true;
-                    break;
+    LogIterator::new(input)
+        .filter(|log| {
+            request_ids.is_empty() || {
+                let mut request_id_found = false;
+                for request_id in &request_ids {
+                    if *request_id == log.request_id {
+                        request_id_found = true;
+                        break;
+                    }
                 }
+                request_id_found
+            } && match mode {
+                ReadMode::All => true,
+                ReadMode::Errors => matches!(
+                    &log.kind,
+                    LogKind::System(SystemLogKind::Error(_)) | LogKind::App(AppLogKind::Error(_))
+                ),
+                ReadMode::Exchanges => matches!(
+                    &log.kind,
+                    LogKind::App(AppLogKind::Journal(
+                        AppLogJournalKind::BuyAsset(_) | AppLogJournalKind::SellAsset(_)
+                    ))
+                ),
             }
-            request_id_found
-        }
-        // подсказка: лучше match
-        && match mode {
-            ReadMode::All => true,
-            ReadMode::Errors => matches!(
-                &log.kind,
-                LogKind::System(SystemLogKind::Error(_)) | LogKind::App(AppLogKind::Error(_))
-            ),
-            ReadMode::Exchanges => matches!(
-                &log.kind,
-                LogKind::App(AppLogKind::Journal(
-                    AppLogJournalKind::BuyAsset(_)
-                    | AppLogJournalKind::SellAsset(_)
-                ))
-            )
-        } {
-            collected.push(log);
-        }
-    }
-    collected
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -165,8 +158,8 @@ App::Journal BuyAsset UserBacket{"user_id":"Alice","backet":Backet{"asset_id":"m
         all_parsed
             .iter()
             .for_each(|parsed| println!("  {:?}", parsed));
-        // 2 для начала и конца строки (чтобы первая и последняя кавычки на отдельных строках были)
-        // второе число - число пустых строк, которые оставлены для удобства чтения
+        // 2 for the beginning and end of the line (so that the first and last quotes are on separate lines)
+        // the second number is the number of blank lines left for ease of reading
         assert_eq!(all_parsed.len(), SOURCE.lines().count() - 2 - 7);
     }
 }
