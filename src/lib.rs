@@ -2,7 +2,9 @@ pub mod entities;
 mod logs;
 mod parsable;
 pub mod parse;
+
 use crate::logs::{AppLogJournalKind, AppLogKind, LogKind, LogLine, LogLineParser, SystemLogKind};
+use std::io::BufRead;
 
 /// Read-all-from-logs mode
 pub enum ReadMode {
@@ -11,13 +13,10 @@ pub enum ReadMode {
     Exchanges,
 }
 
-/// Обёртка, без которой не выполнено требование `std::io::BufReader<T: std::io::Read>`
+/// A wrapper without which the requirement is not met `std::io::BufReader<T: std::io::Read>`
 #[derive(Debug)]
-struct RefMutWrapper<'a, T>(std::cell::RefMut<'a, T>);
-impl<'a, T> std::io::Read for RefMutWrapper<'a, T>
-where
-    T: std::io::Read,
-{
+struct RefMutWrapper(Box<dyn MyReader>);
+impl std::io::Read for RefMutWrapper {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.0.read(buf)
     }
@@ -33,26 +32,15 @@ impl<T: std::io::Read + std::fmt::Debug + 'static> MyReader for T {}
 #[derive(Debug)]
 struct LogIterator {
     lines: std::iter::Filter<
-        std::io::Lines<std::io::BufReader<RefMutWrapper<'static, Box<dyn MyReader>>>>,
+        std::io::Lines<std::io::BufReader<RefMutWrapper>>,
         fn(&Result<String, std::io::Error>) -> bool,
     >,
-    reader_rc: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
     log_lines_parser: LogLineParser,
 }
 impl LogIterator {
-    fn new(r: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>) -> Self {
-        use std::io::BufRead;
-        // подсказка: unsafe избыточен, да и весь rc - тоже
-        // примечание автора прототипа:
-        // > Мотивация: хочу позаимствовать RefCell,
-        // > но боюсь, что Rc протухнет - поэтому буду хранить и Rc и RefMut.
-        // > Я знаю, что деструкторы полей структуры вызываются в
-        // > порядке объявления в структуре - то есть сначала будет удалён
-        // > мой RefMutWrapper, а уже потом и весь исходный reader_rc
-        let the_borrow = r.borrow_mut();
-        let the_borrow = unsafe { std::mem::transmute::<_, _>(the_borrow) };
+    fn new(r: Box<dyn MyReader>) -> Self {
         Self {
-            lines: std::io::BufReader::with_capacity(4096, RefMutWrapper(the_borrow))
+            lines: std::io::BufReader::with_capacity(4096, RefMutWrapper(r))
                 .lines()
                 .filter(|line_res| {
                     !line_res
@@ -61,7 +49,6 @@ impl LogIterator {
                         .map(|line| line.trim().is_empty())
                         .unwrap_or(false)
                 }),
-            reader_rc: r,
             log_lines_parser: LogLineParser::new(),
         }
     }
@@ -75,13 +62,8 @@ impl Iterator for LogIterator {
     }
 }
 
-// подсказка: RefCell вообще не нужен
 /// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи
-pub fn read_log(
-    input: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
-    mode: ReadMode,
-    request_ids: Vec<u32>,
-) -> Vec<LogLine> {
+pub fn read_log(input: Box<dyn MyReader>, mode: ReadMode, request_ids: Vec<u32>) -> Vec<LogLine> {
     let logs = LogIterator::new(input);
     let mut collected = Vec::new();
     // подсказка: можно обойтись итераторами
@@ -189,12 +171,10 @@ App::Journal BuyAsset UserBacket{"user_id":"Alice","backet":Backet{"asset_id":"m
 
     #[test]
     fn test_all() {
-        let refcell1: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(Box::new(SOURCE1.as_bytes())));
-        assert_eq!(read_log(refcell1.clone(), ReadMode::All, vec![]).len(), 1);
-        let refcell: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(Box::new(SOURCE.as_bytes())));
-        let all_parsed = read_log(refcell.clone(), ReadMode::All, vec![]);
+        let box1: Box<dyn MyReader> = Box::new(SOURCE1.as_bytes());
+        assert_eq!(read_log(box1, ReadMode::All, vec![]).len(), 1);
+        let box2: Box<dyn MyReader> = Box::new(SOURCE.as_bytes());
+        let all_parsed = read_log(box2, ReadMode::All, vec![]);
         println!("all parsed:");
         all_parsed
             .iter()
