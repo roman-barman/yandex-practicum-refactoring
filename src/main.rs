@@ -51,7 +51,7 @@ use analysis::entities::Announcements;
 // --- No network
 // --- Access denied
 fn main() {
-    println!("Placeholder для экспериментов с cli");
+    println!("Placeholder for experiments с cli");
 
     let parsing_demo =
         r#"[UserBackets{"user_id":"Bob","backets":[Backet{"asset_id":"milk","count":3,},],},]"#;
