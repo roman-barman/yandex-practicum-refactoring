@@ -37,11 +37,9 @@ impl Parsable for AppLogKind {
                     fn(AppLogJournalKind) -> AppLogKind,
                 >,
             )>::new(
-                MapParser::new(AppLogErrorKind::parser(), |error| AppLogKind::Error(error)),
-                MapParser::new(AppLogTraceKind::parser(), |trace| AppLogKind::Trace(trace)),
-                MapParser::new(AppLogJournalKind::parser(), |journal| {
-                    AppLogKind::Journal(journal)
-                }),
+                MapParser::new(AppLogErrorKind::parser(), AppLogKind::Error),
+                MapParser::new(AppLogTraceKind::parser(), AppLogKind::Trace),
+                MapParser::new(AppLogJournalKind::parser(), AppLogKind::Journal),
             ),
         ))
     }

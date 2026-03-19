@@ -22,8 +22,8 @@ impl Parsable for LogKind {
             MapParser<<SystemLogKind as Parsable>::Parser, fn(SystemLogKind) -> LogKind>,
             MapParser<<AppLogKind as Parsable>::Parser, fn(AppLogKind) -> LogKind>,
         )>::new(
-            MapParser::new(SystemLogKind::parser(), |system| LogKind::System(system)),
-            MapParser::new(AppLogKind::parser(), |app| LogKind::App(app)),
+            MapParser::new(SystemLogKind::parser(), LogKind::System),
+            MapParser::new(AppLogKind::parser(), LogKind::App),
         ))
     }
 }

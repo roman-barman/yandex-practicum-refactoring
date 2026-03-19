@@ -54,14 +54,14 @@ impl Parsable for AppLogErrorKind {
                         StripWhitespaceParser::new(TagParser::new("LackOf")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |error| AppLogErrorKind::LackOf(error),
+                    AppLogErrorKind::LackOf,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("SystemError")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |error| AppLogErrorKind::SystemError(error),
+                    AppLogErrorKind::SystemError,
                 ),
             ),
         )

@@ -32,7 +32,7 @@ impl LogLineParser {
 
     pub fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, LogLine), ()> {
         self.parser
-            .get_or_init(|| <LogLine as Parsable>::parser())
+            .get_or_init(<LogLine as Parsable>::parser)
             .parse(input)
     }
 }

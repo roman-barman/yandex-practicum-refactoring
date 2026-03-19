@@ -261,28 +261,28 @@ impl Parsable for AppLogJournalKind {
                         StripWhitespaceParser::new(TagParser::new("DepositCash")),
                         UserCash::parser(),
                     ),
-                    |user_cash| AppLogJournalKind::DepositCash(user_cash),
+                    AppLogJournalKind::DepositCash,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("WithdrawCash")),
                         UserCash::parser(),
                     ),
-                    |user_cash| AppLogJournalKind::WithdrawCash(user_cash),
+                    AppLogJournalKind::WithdrawCash,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("BuyAsset")),
                         UserBucket::parser(),
                     ),
-                    |user_backet| AppLogJournalKind::BuyAsset(user_backet),
+                    AppLogJournalKind::BuyAsset,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("SellAsset")),
                         UserBucket::parser(),
                     ),
-                    |user_backet| AppLogJournalKind::SellAsset(user_backet),
+                    AppLogJournalKind::SellAsset,
                 ),
             ),
         )

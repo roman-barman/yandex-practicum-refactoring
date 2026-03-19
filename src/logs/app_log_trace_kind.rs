@@ -85,28 +85,28 @@ impl Parsable for AppLogTraceKind {
                         StripWhitespaceParser::new(TagParser::new("Connect")),
                         StripWhitespaceParser::new(AuthData::parser()),
                     ),
-                    |authdata| AppLogTraceKind::Connect(authdata),
+                    AppLogTraceKind::Connect,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("SendRequest")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |trace| AppLogTraceKind::SendRequest(trace),
+                    AppLogTraceKind::SendRequest,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("Check")),
                         StripWhitespaceParser::new(Announcements::parser()),
                     ),
-                    |announcements| AppLogTraceKind::Check(announcements),
+                    AppLogTraceKind::Check,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("GetResponse")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |trace| AppLogTraceKind::GetResponse(trace),
+                    AppLogTraceKind::GetResponse,
                 ),
             ),
         )

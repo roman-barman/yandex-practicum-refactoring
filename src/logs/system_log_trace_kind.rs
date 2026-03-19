@@ -54,14 +54,14 @@ impl Parsable for SystemLogTraceKind {
                         StripWhitespaceParser::new(TagParser::new("SendRequest")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |request| SystemLogTraceKind::SendRequest(request),
+                    SystemLogTraceKind::SendRequest,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("GetResponse")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |response| SystemLogTraceKind::GetResponse(response),
+                    SystemLogTraceKind::GetResponse,
                 ),
             ),
         )

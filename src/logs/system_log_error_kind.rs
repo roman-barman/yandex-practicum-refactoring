@@ -54,14 +54,14 @@ impl Parsable for SystemLogErrorKind {
                         StripWhitespaceParser::new(TagParser::new("NetworkError")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |error| SystemLogErrorKind::NetworkError(error),
+                    SystemLogErrorKind::NetworkError,
                 ),
                 MapParser::new(
                     PrecededParser::new(
                         StripWhitespaceParser::new(TagParser::new("AccessDenied")),
                         StripWhitespaceParser::new(UnquoteParser),
                     ),
-                    |error| SystemLogErrorKind::AccessDenied(error),
+                    SystemLogErrorKind::AccessDenied,
                 ),
             ),
         )

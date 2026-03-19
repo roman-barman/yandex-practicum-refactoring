@@ -6,6 +6,7 @@ use crate::parse::{
 
 /// The pair 'abbreviated name of an object' - 'its description'
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub struct AssetDsc {
     // `dsc` aka `description`
     id: String,
