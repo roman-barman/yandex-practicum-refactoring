@@ -1,55 +1,55 @@
-// Пусть есть логи:
+// Let's say there are logs:
 // System(requestid):
 // - trace
 // - error
 // App(requestid):
 // - trace
 // - error
-// - journal (человекочитаемая сводка)
+// - journal (human-readable summary)
 
-// Есть прототип штуки, которая умеет:
-// - парсить логи
-// - фильтровать
-//  -- по requestid
-//  -- по ошибкам
-//  -- по изменению счёта (купить/продать)
+// There's a prototype of something that can:
+// - parse logs
+// - filter
+// -- by requestid
+// -- by errors
+// -- by account change (buy/sell)
 
 use analysis::entities::Announcements;
 
-// Модель данных:
-// - Пользователь (userid, имя)
-// - Вещи
-//  -- Предмет (assetid, название)
-//  -- Набор (assetid, количество)
-//      comment{-- Собственность (assetid, userid владельца, количество)}
-//  -- Таблица предложения (assetid на assetid, userid продавца)
-//  -- Таблица спроса (assetid на assetid, userid покупателя)
-// - Операция App
-//  -- Journal
-//   --- Создать пользователя userid с уставным капиталом от 10usd и выше
-//   --- Удалить пользователя
-//   --- Зарегистрировать assetid с ликвидностью от 50usd
-//   --- Удалить assetid (весь asset должен принадлежать пользователю)
-//   --- Внести usd для userid (usd (aka доллар сша) - это тип asset)
-//   --- Вывести usd для userid
-//   --- Купить asset
-//   --- Продать asset
-//  -- Trace
-//   --- Соединить с биржей
-//   --- Получить данные с биржи
-//   --- Локальная проверка корректности (упреждение ошибок в ответе)
-//   --- Отправить запрос в биржу
-//   --- Получить ответ от биржи
-//  -- Error
-//   --- нет asset
-//   --- системная ошибка
-// - Операция System
-//  -- Trace
-//   --- Отправить запрос
-//   --- Получить ответ
-//  -- Error
-//   --- нет сети
-//   --- отказано в доступе
+// Data Model:
+// - User (userid, name)
+// - Items
+// -- Item (assetid, name)
+// -- Set (assetid, quantity)
+// comment{-- Property (assetid, owner userid, quantity)}
+// -- Supply Table (assetid per assetid, seller userid)
+// -- Demand Table (assetid per assetid, buyer userid)
+// - App Operation
+// -- Journal
+// --- Create user with authorized capital of 10 USD or more
+// --- Delete user
+// --- Register asset with liquidity of 50 USD
+// --- Delete asset (all assets must be owned by the user)
+// --- Deposit USD for userid (USD (aka US dollar) is an asset type)
+// --- Withdraw USD for userid
+// --- Buy asset
+// --- Sell asset
+// -- Trace
+// --- Connect to the exchange
+// --- Receive data from the exchange
+// --- Local validation (preventing errors in the response)
+// --- Send request to the exchange
+// --- Receive a response from the exchange
+// -- Error
+// --- No asset
+// --- System error
+// - System operation
+// -- Trace
+// --- Send request
+// --- Receive a response
+// -- Error
+// --- No network
+// --- Access denied
 fn main() {
     println!("Placeholder для экспериментов с cli");
 
@@ -59,15 +59,20 @@ fn main() {
     println!("demo-parsed: {:?}", announcements);
 
     let args = std::env::args().collect::<Vec<_>>();
-    let filename = args[1].clone();
-    println!(
-        "Trying opening file '{}' from directory '{}'",
-        filename,
-        std::env::current_dir().unwrap().to_string_lossy()
-    );
-    let file = std::fs::File::open(filename).unwrap();
 
-    let logs = analysis::read_log(file, analysis::ReadMode::All, vec![]);
-    println!("got logs:");
-    logs.iter().for_each(|parsed| println!("  {:?}", parsed));
+    let filename = args.get(1);
+    if let Some(filename) = filename {
+        println!(
+            "Trying opening file '{}' from directory '{}'",
+            filename,
+            std::env::current_dir()
+                .expect("current directory not found")
+                .to_string_lossy()
+        );
+        let file = std::fs::File::open(filename).expect("file not found");
+
+        let logs = analysis::read_log(file, analysis::ReadMode::All, vec![]);
+        println!("got logs:");
+        logs.iter().for_each(|parsed| println!("  {:?}", parsed));
+    }
 }
